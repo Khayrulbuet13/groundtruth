@@ -1,0 +1,9 @@
+{
+  "name": "quiz-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "yaml": "^2.7.0",
+    "zod": "^3.24.2"
+  }
+}

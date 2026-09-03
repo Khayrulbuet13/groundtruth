@@ -1,0 +1,56 @@
+- id: cnn
+  name: Convolutional Networks
+  subtopics:
+    - id: conv
+      name: Convolution mechanics
+    - id: pool
+      name: Pooling & downsampling
+    - id: norm
+      name: Normalization & regularization
+    - id: arch
+      name: Backbone architectures
+- id: det
+  name: Object Detection
+  subtopics:
+    - id: stage
+      name: Two-stage detectors
+    - id: anchor
+      name: Anchors & assignment
+    - id: nms
+      name: NMS & metrics
+- id: seg
+  name: Image Segmentation
+  subtopics:
+    - id: sem
+      name: Semantic segmentation
+    - id: inst
+      name: Instance & panoptic
+    - id: segloss
+      name: Losses & metrics
+- id: vit
+  name: Vision Transformers
+  subtopics:
+    - id: attn
+      name: Attention & patch embedding
+    - id: pos
+      name: Positional encoding
+    - id: hier
+      name: Hierarchical & hybrid
+- id: classic
+  name: Classical CV
+  subtopics:
+    - id: filter
+      name: Filtering & edges
+    - id: feat
+      name: Features & matching
+    - id: ransac
+      name: Transforms & RANSAC
+- id: threed
+  name: 3D Vision
+  subtopics:
+    - id: cam
+      name: Camera models & calibration
+    - id: epi
+      name: Epipolar geometry
+    - id: stereo
+      name: Stereo & depth

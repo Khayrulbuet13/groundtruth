@@ -1,0 +1,169 @@
+schema_version: 1
+deck_name: det bank
+questions:
+  - id: q_0D6F4YABXQ5G
+    legacy_id: q013
+    tags:
+      - det
+      - stage
+    difficulty: easy
+    stem: What does the region proposal network in Faster R-CNN output at each
+      feature-map location?
+    options:
+      - Objectness scores and box refinements for k anchors
+      - A class label and mask for every anchor box
+      - One box per location with its class posterior
+      - A dense objectness heatmap with no box regression
+    answer_idx: 0
+    explanation: "The RPN is a small conv head with two sibling 1×1 branches: 2k
+      objectness logits and 4k box deltas per position. Class identity is
+      deferred to the second stage."
+    source: Ren et al., Faster R-CNN — §3.1
+    figure_url: null
+  - id: q_757NGNJV0H4H
+    legacy_id: q014
+    tags:
+      - det
+      - stage
+    difficulty: medium
+    stem: How does RoIAlign improve on RoIPool?
+    options:
+      - It pools a larger window to capture more context
+      - It interpolates bilinearly instead of quantizing bin edges
+      - It replaces max pooling inside each bin with averaging
+      - It snaps proposals to the anchor grid before pooling
+    answer_idx: 1
+    explanation: RoIPool rounds region and bin boundaries to integer feature cells,
+      shifting features by up to a full stride. RoIAlign keeps fractional
+      coordinates and interpolates, which matters most for masks.
+    source: He et al., Mask R-CNN — §3
+    figure_url: null
+  - id: q_38DQBGVNP04P
+    legacy_id: q015
+    tags:
+      - det
+      - stage
+    difficulty: medium
+    stem: How do two-stage detectors keep foreground and background balanced in the
+      second stage?
+    options:
+      - Every background anchor is down-weighted by its confidence
+      - All proposals below the NMS threshold are discarded
+      - Each mini-batch is sampled at a fixed positive-to-negative ratio
+      - The classification loss is reweighted by class frequency
+    answer_idx: 2
+    explanation: Fast R-CNN samples RoIs so roughly a quarter are positives, which
+      bounds the imbalance the classifier ever sees. Dense one-stage heads
+      cannot sample this way and need a loss-level fix instead.
+    source: Girshick, Fast R-CNN — §2.3
+    figure_url: null
+  - id: q_ZE2HXXBHTDES
+    legacy_id: q016
+    tags:
+      - det
+      - anchor
+    difficulty: medium
+    stem: When is an anchor labelled positive in Faster R-CNN?
+    options:
+      - IoU above 0.5 with any ground-truth box of the same class
+      - Whenever its centre falls inside a ground-truth box
+      - Only when it is the highest-scoring anchor in the image
+      - IoU above 0.7 with a ground-truth box, or the highest IoU for that box
+    answer_idx: 3
+    explanation: The high-IoU rule supplies most positives, and the highest-IoU
+      fallback guarantees every ground-truth box gets at least one, which
+      matters for objects no anchor shape fits. Anchors below 0.3 IoU are
+      negatives.
+    source: Ren et al., Faster R-CNN — §3.1.2
+    figure_url: null
+  - id: q_DPWWY4E4AY0T
+    legacy_id: q017
+    tags:
+      - det
+      - anchor
+    difficulty: medium
+    stem: What problem does focal loss address in dense one-stage detectors?
+    options:
+      - Easy background anchors dominating the total loss
+      - Anchors of the wrong aspect ratio for thin objects
+      - Duplicate detections surviving non-maximum suppression
+      - Gradient explosion in the box regression branch
+    answer_idx: 0
+    explanation: A dense head scores tens of thousands of anchors, nearly all easy
+      negatives, whose individually small losses still swamp the rare positives.
+      The (1−p_t)^γ factor suppresses well-classified examples.
+    source: Lin et al., Focal Loss for Dense Object Detection — §3
+    figure_url: null
+  - id: q_PDXDXSWYVKCY
+    legacy_id: q018
+    tags:
+      - det
+      - anchor
+    difficulty: hard
+    stem: How does an anchor-free detector such as FCOS represent a box?
+    options:
+      - A centre heatmap plus one learned box shape per class
+      - Per-pixel distances to the four box edges, plus a centerness score
+      - Corner keypoint pairs matched by embedding distance
+      - A fixed anchor set collapsed to a single scale
+    answer_idx: 1
+    explanation: Each location inside a ground-truth box regresses left, top, right
+      and bottom offsets, so no anchor shapes or IoU matching hyper-parameters
+      are needed. Centerness down-weights predictions far from the object
+      centre.
+    source: Tian et al., FCOS — §3
+    figure_url: null
+  - id: q_SDVY9PF3B7GZ
+    legacy_id: q019
+    tags:
+      - det
+      - nms
+    difficulty: easy
+    stem: What does greedy non-maximum suppression remove from a set of detections?
+    options:
+      - All boxes whose confidence falls below a score threshold
+      - Boxes whose aspect ratio differs from their matched anchor
+      - Lower-scoring boxes overlapping a kept box above an IoU threshold
+      - Duplicate boxes that share an identical predicted class
+    answer_idx: 2
+    explanation: NMS sorts by score, keeps the top box, discards anything
+      overlapping it beyond the IoU threshold, then repeats on the remainder.
+      Score thresholding is a separate step applied before it.
+    source: "Szeliski, Computer Vision: Algorithms and Applications, 2nd ed. — Ch. 6"
+    figure_url: null
+  - id: q_P7V8N5FQNDFM
+    legacy_id: q020
+    tags:
+      - det
+      - nms
+    difficulty: medium
+    stem: On COCO, what does the primary metric AP@[.50:.95] average over?
+    options:
+      - Ten confidence thresholds, then over object sizes
+      - All IoU thresholds above 0.50, weighted by class frequency
+      - Precision at ten fixed recall points per class
+      - Ten IoU thresholds from 0.50 to 0.95, then over classes
+    answer_idx: 3
+    explanation: AP is computed at IoU 0.50, 0.55 through 0.95 and averaged, so
+      localisation quality is rewarded rather than mere detection. Per-class
+      values are then averaged into the headline number.
+    source: Lin et al., Microsoft COCO — Detection evaluation
+    figure_url: null
+  - id: q_DCG68DY5ARR2
+    legacy_id: q021
+    tags:
+      - det
+      - nms
+    difficulty: hard
+    stem: Raising the NMS IoU threshold from 0.5 to 0.7 typically has what effect?
+    options:
+      - Recall improves in crowded scenes but duplicates increase
+      - Both precision and recall improve on every scene type
+      - Recall drops because more true positives are suppressed
+      - Only the detection ranking changes, not the metrics
+    answer_idx: 0
+    explanation: A looser threshold suppresses less, so genuinely overlapping
+      objects survive, and so do redundant boxes on the same object. Soft-NMS
+      decays scores by overlap instead of forcing the trade-off.
+    source: Bodla et al., Soft-NMS — §1
+    figure_url: null

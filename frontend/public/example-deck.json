@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "deck_name": "CV Fundamentals Sample",
+  "attribution": "khayrul.me practice quiz",
+  "questions": [
+    {
+      "tags": ["cnn", "conv"],
+      "difficulty": "easy",
+      "stem": "A 224×224×3 image enters a conv layer with 64 filters of size 7×7, stride 2, padding 3. What is the output shape?",
+      "options": [
+        "112×112×64",
+        "110×110×64",
+        "112×112×3",
+        "109×109×64"
+      ],
+      "answer_idx": 0,
+      "explanation": "Spatial size is floor((H + 2p − k)/s) + 1 = floor((224 + 6 − 7)/2) + 1 = 112. Output depth is set by the filter count.",
+      "source": "Goodfellow, Bengio & Courville, Deep Learning — Ch. 9",
+      "figure_url": null
+    },
+    {
+      "tags": ["cnn", "conv", "det"],
+      "difficulty": "medium",
+      "stem": "Two stacked 3×3 convolutions cover the same receptive field as one 5×5. With C channels in and out, how do their parameter counts compare?",
+      "options": [
+        "18C² against 25C², so the stack is cheaper",
+        "25C² against 18C², so the stack is costlier",
+        "Both use 25C² weights",
+        "The stack uses 9C², a fourfold saving"
+      ],
+      "answer_idx": 0,
+      "explanation": "Two 3×3 layers need 2·9C² = 18C² weights against 25C² for a single 5×5, and the stack inserts an extra nonlinearity.",
+      "source": "Simonyan & Zisserman, Very Deep Convolutional Networks — §2.3",
+      "figure_url": null
+    }
+  ]
+}

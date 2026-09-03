@@ -1,0 +1,119 @@
+schema_version: 1
+deck_name: vit bank
+questions:
+  - id: q_F75852CDNCDV
+    legacy_id: q028
+    tags:
+      - vit
+      - attn
+    difficulty: easy
+    stem: In ViT-Base/16 on a 224×224 image, how many tokens enter the transformer
+      encoder?
+    options:
+      - "196"
+      - "224"
+      - "256"
+      - "197"
+    answer_idx: 3
+    explanation: The image splits into (224/16)² = 196 non-overlapping patches, and
+      a learnable class token is prepended, giving 197. The patch size, not the
+      channel count, sets the sequence length.
+    source: Dosovitskiy et al., An Image is Worth 16x16 Words — §3.1
+    figure_url: null
+  - id: q_TST8QQAMNP94
+    legacy_id: q029
+    tags:
+      - vit
+      - attn
+    difficulty: medium
+    stem: How does the cost of global self-attention scale with the number of tokens
+      N?
+    options:
+      - Quadratically in N, from the N×N attention matrix
+      - Linearly in N, since each token is projected once
+      - With N log N, because of the softmax reduction
+      - Independently of N, since heads run in parallel
+    answer_idx: 0
+    explanation: Every query attends to every key, so both compute and memory for
+      the attention matrix grow as N². This is why high-resolution vision
+      transformers restrict attention to local windows.
+    source: Vaswani et al., Attention Is All You Need — §4
+    figure_url: null
+  - id: q_MVRFDR5P6GYN
+    legacy_id: q030
+    tags:
+      - vit
+      - attn
+    difficulty: hard
+    stem: Why does ViT underperform a comparable CNN when trained on ImageNet-1k
+      alone?
+    options:
+      - Its patch embedding discards colour information
+      - It lacks the locality and translation-equivariance priors of convolution
+      - Layer normalization prevents it from fitting small datasets
+      - Its parameter count is an order of magnitude larger
+    answer_idx: 1
+    explanation: Convolution builds in local connectivity and weight sharing, which
+      act as a strong prior when data is limited. ViT has to learn those
+      relationships from scratch, so it needs far more data or heavy
+      augmentation.
+    source: Dosovitskiy et al., An Image is Worth 16x16 Words — §4.2
+    figure_url: null
+  - id: q_BGGXGS8F2030
+    legacy_id: q031
+    tags:
+      - vit
+      - pos
+    difficulty: medium
+    stem: Why does a transformer need positional encoding at all?
+    options:
+      - The softmax would otherwise saturate on long sequences
+      - Patch embeddings are not normalized across positions
+      - Self-attention is permutation-equivariant, so token order carries no
+        signal
+      - Residual connections destroy spatial ordering
+    answer_idx: 2
+    explanation: Attention computes a weighted sum over an unordered set, so
+      shuffling the tokens shuffles the output identically and no spatial
+      structure survives. Position information has to be injected into the
+      embeddings.
+    source: Vaswani et al., Attention Is All You Need — §3.5
+    figure_url: null
+  - id: q_32SR1EQY12GZ
+    legacy_id: q032
+    tags:
+      - vit
+      - pos
+    difficulty: hard
+    stem: A ViT with learned absolute position embeddings is fine-tuned at higher
+      input resolution. What is standard practice?
+    options:
+      - Reinitialize them randomly and retrain the whole encoder
+      - Freeze them and increase the patch size proportionally
+      - Discard them, since attention is resolution-agnostic
+      - Interpolate the position embeddings to the new grid size
+    answer_idx: 3
+    explanation: More patches means more positions than the pretrained table holds,
+      so the embeddings are treated as a 2D grid and resampled bilinearly.
+      Discarding them destroys the spatial prior learned in pretraining.
+    source: Dosovitskiy et al., An Image is Worth 16x16 Words — §3.2
+    figure_url: null
+  - id: q_0JKQGJCW8GHR
+    legacy_id: q033
+    tags:
+      - vit
+      - hier
+    difficulty: medium
+    stem: What does Swin’s shifted window scheme achieve?
+    options:
+      - Cross-window connections at linear cost in image size
+      - Global attention with a single quadratic attention map
+      - Data-dependent window sizes learned during training
+      - Elimination of positional encoding entirely
+    answer_idx: 0
+    explanation: Attention inside fixed local windows is linear in the number of
+      pixels but blocks information crossing window borders. Shifting the
+      partition every other block reconnects neighbouring windows while keeping
+      that cost.
+    source: Liu et al., Swin Transformer — §3.2
+    figure_url: null

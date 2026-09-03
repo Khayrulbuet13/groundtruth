@@ -1,0 +1,19 @@
+FROM python:3.12-slim AS builder
+WORKDIR /app/backend
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY backend/pyproject.toml backend/main.py ./
+COPY backend/api ./api
+COPY backend/models ./models
+RUN uv pip install --system .
+
+FROM python:3.12-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY backend ./backend
+ENV PYTHONPATH=/app/backend
+WORKDIR /app/backend
+EXPOSE 8000
+HEALTHCHECK --start-period=20s CMD curl -f http://localhost:8000/api/v1/health || exit 1
+CMD ["python", "main.py"]

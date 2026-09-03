@@ -1,0 +1,230 @@
+schema_version: 1
+deck_name: cnn bank
+questions:
+  - id: q_QZ9PH9VP0X9Y
+    legacy_id: q001
+    tags:
+      - cnn
+      - conv
+    difficulty: easy
+    stem: A 224×224×3 image enters a conv layer with 64 filters of size 7×7, stride
+      2, padding 3. What is the output shape?
+    options:
+      - 112×112×64
+      - 110×110×64
+      - 112×112×3
+      - 109×109×64
+    answer_idx: 0
+    explanation: Spatial size is floor((H + 2p − k)/s) + 1 = floor((224 + 6 − 7)/2)
+      + 1 = 112. Output depth is set by the filter count; the input depth is
+      consumed inside each filter.
+    source: Goodfellow, Bengio & Courville, Deep Learning — Ch. 9
+    figure_url: null
+  - id: q_KNTAASB8FC5M
+    legacy_id: q002
+    tags:
+      - cnn
+      - conv
+    difficulty: medium
+    stem: Two stacked 3×3 convolutions cover the same receptive field as one 5×5.
+      With C channels in and out, how do their parameter counts compare?
+    options:
+      - 25C² against 18C², so the stack is costlier
+      - 18C² against 25C², so the stack is cheaper
+      - Both use 25C² weights
+      - The stack uses 9C², a fourfold saving
+    answer_idx: 1
+    explanation: Two 3×3 layers need 2·9C² = 18C² weights against 25C² for a single
+      5×5, and the stack inserts an extra nonlinearity. This is the argument VGG
+      makes for small kernels.
+    source: Simonyan & Zisserman, Very Deep Convolutional Networks — §2.3
+    figure_url: null
+  - id: q_TKHW5G3NKN57
+    legacy_id: q003
+    tags:
+      - cnn
+      - conv
+    difficulty: hard
+    stem: Swapping a 3×3 convolution for a depthwise separable one at 256 input and
+      256 output channels cuts multiply-adds by roughly what factor?
+    options:
+      - About 3×
+      - About 81×
+      - About 9×
+      - About 256×
+    answer_idx: 2
+    explanation: The cost ratio is 1/C_out + 1/k² = 1/256 + 1/9 ≈ 0.115. Once
+      channels are wide the 1/k² term dominates, so the saving approaches k² = 9
+      rather than the channel count.
+    source: Howard et al., MobileNets — §3.1
+    figure_url: null
+  - id: q_25XCH1MYYQNX
+    legacy_id: q004
+    tags:
+      - cnn
+      - pool
+    difficulty: easy
+    stem: Why is global average pooling often used in place of flatten plus a fully
+      connected head?
+    options:
+      - It preserves the precise location of each feature
+      - It widens the receptive field of earlier layers
+      - It removes the need for a nonlinear classifier
+      - It adds no parameters and accepts any input resolution
+    answer_idx: 3
+    explanation: Averaging each channel to a scalar has no weights, so it removes
+      the largest parameter block in classic CNNs and acts as a structural
+      regulariser. It also makes the head independent of input size.
+    source: Lin, Chen & Yan, Network In Network — §3.2
+    figure_url: null
+  - id: q_KPP2SXH734H5
+    legacy_id: q005
+    tags:
+      - cnn
+      - pool
+    difficulty: medium
+    stem: How is the incoming gradient distributed when backpropagating through a
+      2×2 stride-2 max pooling layer?
+    options:
+      - All of it to the arg-max input of each window
+      - Split evenly across all four inputs
+      - Weighted by each input’s relative magnitude
+      - Scaled by one quarter for every input
+    answer_idx: 0
+    explanation: Max pooling is a selector, so its local derivative is one at the
+      winning position and zero elsewhere. Average pooling is the operator that
+      spreads gradient evenly over the window.
+    source: Goodfellow, Bengio & Courville, Deep Learning — Ch. 9
+    figure_url: null
+  - id: q_F7XHXCHYP4R8
+    legacy_id: q006
+    tags:
+      - cnn
+      - pool
+    difficulty: medium
+    stem: What changes when max pooling layers are replaced by stride-2 convolutions?
+    options:
+      - The receptive field stops growing with depth
+      - Downsampling becomes learned rather than fixed
+      - Translation invariance becomes exact
+      - Feature maps keep their original resolution
+    answer_idx: 1
+    explanation: A strided convolution carries weights, so the network learns how to
+      summarise each neighbourhood instead of applying a hand-chosen max.
+      All-convolutional nets show this matches or beats pooling.
+    source: Springenberg et al., Striving for Simplicity — §2
+    figure_url: null
+  - id: q_6FASSJVS0DEA
+    legacy_id: q007
+    tags:
+      - cnn
+      - norm
+    difficulty: easy
+    stem: Why does batch normalization behave differently at training and inference
+      time?
+    options:
+      - Training skips the affine scale and shift parameters
+      - Inference normalizes per channel, training per sample
+      - Training uses batch statistics, inference uses running estimates
+      - Inference disables the layer entirely, as dropout does
+    answer_idx: 2
+    explanation: A single test example has no meaningful batch mean or variance, so
+      training accumulates running averages and inference uses those fixed
+      values. The learned scale and shift stay active in both modes.
+    source: Ioffe & Szegedy, Batch Normalization — §3.1
+    figure_url: null
+  - id: q_ZSR22C4FQ673
+    legacy_id: q008
+    tags:
+      - cnn
+      - norm
+    difficulty: medium
+    stem: Detection models often train with two images per GPU. Which normalization
+      layer suits that regime?
+    options:
+      - Batch normalization with a larger momentum term
+      - Dropout applied to the normalization inputs
+      - Weight decay tuned to the effective batch size
+      - Group normalization, whose statistics ignore batch size
+    answer_idx: 3
+    explanation: Group norm computes statistics over channel groups inside one
+      sample, so its error stays flat as the batch shrinks. Batch norm estimates
+      get noisy and biased at very small batch sizes.
+    source: Wu & He, Group Normalization — §3
+    figure_url: null
+  - id: q_3CDVQ5E25ZYK
+    legacy_id: q009
+    tags:
+      - cnn
+      - norm
+    difficulty: medium
+    stem: Placing dropout immediately before batch normalization often hurts
+      accuracy. Why?
+    options:
+      - Dropout shifts activation variance between train and test
+      - Dropout masks the affine parameters of the norm layer
+      - Batch norm rescales the dropout keep probability
+      - Both layers compute the same statistics twice
+    answer_idx: 0
+    explanation: Dropout inflates activation variance during training but not at
+      test time, so the running statistics batch norm collected no longer match
+      what it sees. The mismatch grows with the drop rate.
+    source: Li et al., Understanding the Disharmony Between Dropout and BN — §3
+    figure_url: null
+  - id: q_22MNX8NM05GP
+    legacy_id: q010
+    tags:
+      - cnn
+      - arch
+    difficulty: easy
+    stem: What is the main reason residual connections make very deep networks
+      trainable?
+    options:
+      - They reduce the parameter count of each block
+      - They give gradients an identity path back to early layers
+      - They normalize activations between stages
+      - They enlarge the receptive field per layer
+    answer_idx: 1
+    explanation: The skip path passes gradient back unattenuated, so early layers
+      still receive signal at depth 50 or 100. Each block then only has to learn
+      a residual correction to the identity mapping.
+    source: He et al., Deep Residual Learning — §3
+    figure_url: null
+  - id: q_1MXHRC1Y6475
+    legacy_id: q011
+    tags:
+      - cnn
+      - arch
+    difficulty: medium
+    stem: In a bottleneck residual block (1×1 → 3×3 → 1×1), what does the leading
+      1×1 convolution do?
+    options:
+      - Downsamples the feature map spatially by two
+      - Provides the shortcut projection for the block
+      - Cuts the channel count so the 3×3 runs cheaply
+      - Normalizes the feature map before convolution
+    answer_idx: 2
+    explanation: The first 1×1 projects to a narrow bottleneck, the 3×3 operates on
+      that reduced width, and the final 1×1 restores the wide output. This keeps
+      deeper variants close in cost to the basic block.
+    source: He et al., Deep Residual Learning — §4.1
+    figure_url: null
+  - id: q_6F4NC2EBZMTV
+    legacy_id: q012
+    tags:
+      - cnn
+      - arch
+    difficulty: hard
+    stem: What does a dilated (atrous) convolution with rate r change relative to a
+      standard convolution?
+    options:
+      - Parameter count grows with r while resolution is kept
+      - Output resolution drops by a factor of r per layer
+      - Effective stride grows while the receptive field is fixed
+      - Receptive field grows with no extra parameters or downsampling
+    answer_idx: 3
+    explanation: Inserting r−1 gaps between kernel taps widens support to r(k−1)+1
+      using the same k² weights. Dense prediction models rely on this to gain
+      context without the resolution loss of pooling.
+    source: Yu & Koltun, Multi-Scale Context Aggregation — §2
+    figure_url: null

@@ -1,0 +1,116 @@
+schema_version: 1
+deck_name: seg bank
+questions:
+  - id: q_4CD6GWGV9QG8
+    legacy_id: q022
+    tags:
+      - seg
+      - sem
+    difficulty: easy
+    stem: What do the skip connections in U-Net contribute?
+    options:
+      - Gradient shortcuts that prevent vanishing gradients
+      - High-resolution encoder detail concatenated into the decoder
+      - Multi-scale context through parallel dilated branches
+      - Weight sharing between encoder and decoder stages
+    answer_idx: 1
+    explanation: Downsampling discards the fine spatial evidence needed for exact
+      boundaries, and the decoder cannot invent it back. Concatenating the
+      matching encoder map restores that detail before each upsampling step.
+    source: Ronneberger, Fischer & Brox, U-Net — §2
+    figure_url: null
+  - id: q_9QQ8EGB5F0TS
+    legacy_id: q023
+    tags:
+      - seg
+      - sem
+    difficulty: medium
+    stem: Why do transposed convolutions tend to produce checkerboard artifacts?
+    options:
+      - Learned kernels are initialized with too large a variance
+      - Bilinear upsampling is applied before the convolution
+      - A kernel size not divisible by the stride gives uneven output overlap
+      - Padding is asymmetric on the right and bottom edges
+    answer_idx: 2
+    explanation: When the kernel does not tile the stride evenly, output pixels
+      receive contributions from different numbers of kernel placements, so the
+      gain varies periodically. Resize-then-convolve avoids the pattern.
+    source: Odena, Dumoulin & Olah, Deconvolution and Checkerboard Artifacts
+    figure_url: null
+  - id: q_HNBWBZ67JFR5
+    legacy_id: q024
+    tags:
+      - seg
+      - sem
+    difficulty: hard
+    stem: What does atrous spatial pyramid pooling add to a segmentation head?
+    options:
+      - A learned upsampling path that recovers boundary detail
+      - A CRF layer that refines labels after the softmax
+      - Per-class attention over the encoder feature stack
+      - Parallel dilated convolutions that capture several context scales
+    answer_idx: 3
+    explanation: Branches at different dilation rates read the same features over
+      different spatial extents, and their concatenation gives each pixel both
+      local and scene-level context. Cost stays modest since resolution never
+      drops.
+    source: Chen et al., DeepLab — §3.1
+    figure_url: null
+  - id: q_87MA4DK48RGW
+    legacy_id: q025
+    tags:
+      - seg
+      - inst
+    difficulty: medium
+    stem: Mask R-CNN predicts one binary mask per class rather than a single
+      multi-class mask. Why?
+    options:
+      - It decouples mask prediction from class prediction
+      - It lets masks overlap between instances
+      - It halves the size of the mask head
+      - It removes the need for RoIAlign
+    answer_idx: 0
+    explanation: A per-class sigmoid mask means the mask branch never competes
+      across classes, and classification is left to the dedicated head. Using a
+      softmax over classes per pixel measurably degrades mask quality.
+    source: He et al., Mask R-CNN — §3, Mask Representation
+    figure_url: null
+  - id: q_52RMT2AK3GYN
+    legacy_id: q026
+    tags:
+      - seg
+      - inst
+    difficulty: medium
+    stem: What does panoptic segmentation require that instance segmentation does
+      not?
+    options:
+      - Depth ordering between overlapping instance masks
+      - Every pixel labelled, with stuff classes and non-overlapping instances
+      - Instance identities kept consistent across video frames
+      - Class-agnostic proposals from a separate region network
+    answer_idx: 1
+    explanation: Panoptic output assigns each pixel exactly one semantic label plus,
+      for thing classes, one instance id, so amorphous stuff regions such as sky
+      and road must also be covered. Overlapping masks are not permitted.
+    source: Kirillov et al., Panoptic Segmentation — §3
+    figure_url: null
+  - id: q_EBWA00QK7M21
+    legacy_id: q027
+    tags:
+      - seg
+      - segloss
+    difficulty: medium
+    stem: Why is Dice or IoU loss often preferred to plain cross-entropy for small
+      foreground structures?
+    options:
+      - It converges faster because its gradient is bounded
+      - It penalizes boundary pixels more than interior pixels
+      - It measures region overlap, so it is insensitive to class imbalance
+      - It removes the need for any foreground class weighting
+    answer_idx: 2
+    explanation: Cross-entropy averages over pixels, so a foreground occupying one
+      percent of the image barely moves the loss and predicting all background
+      is a strong local optimum. Overlap losses normalise by region size
+      instead.
+    source: Milletari et al., V-Net — §2.2
+    figure_url: null

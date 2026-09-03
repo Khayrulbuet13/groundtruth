@@ -1,0 +1,135 @@
+schema_version: 1
+deck_name: threed bank
+questions:
+  - id: q_H7GDTZ3CFBHT
+    legacy_id: q040
+    tags:
+      - threed
+      - cam
+    difficulty: easy
+    stem: Which parameters make up the intrinsic matrix K of a pinhole camera?
+    options:
+      - Rotation and translation relative to the world
+      - Radial and tangential distortion coefficients
+      - Baseline and disparity range of the rig
+      - Focal lengths, principal point, and skew
+    answer_idx: 3
+    explanation: K holds fx, fy, the principal point cx, cy, and a skew term that is
+      nearly always zero. Rotation and translation are extrinsics, and lens
+      distortion sits outside the linear model entirely.
+    source: Hartley & Zisserman, Multiple View Geometry, 2nd ed. — §6.1
+    figure_url: null
+  - id: q_3QBEC04KB24R
+    legacy_id: q041
+    tags:
+      - threed
+      - cam
+    difficulty: medium
+    stem: Why does Zhang’s calibration method need several views of a planar target?
+    options:
+      - Each plane homography gives two constraints on the intrinsics
+      - Each view refines the radial distortion coefficients only
+      - A single view cannot resolve the principal point sign
+      - Multiple views average out target manufacturing error
+    answer_idx: 0
+    explanation: Each observed plane yields a homography that imposes two
+      constraints on the five intrinsic unknowns, so at least three views are
+      needed for a full solution. More views improve conditioning and let
+      distortion be fitted too.
+    source: Zhang, A Flexible New Technique for Camera Calibration — §3.1
+    figure_url: null
+  - id: q_J0JSNHQTXK1M
+    legacy_id: q042
+    tags:
+      - threed
+      - epi
+    difficulty: medium
+    stem: What distinguishes the essential matrix from the fundamental matrix?
+    options:
+      - The essential matrix is rank three, the fundamental rank two
+      - The essential matrix assumes calibrated cameras
+      - The fundamental matrix requires rectified images
+      - The essential matrix maps points to points, not lines
+    answer_idx: 1
+    explanation: E relates normalised image coordinates and therefore presumes K is
+      known, giving five degrees of freedom that decompose into relative
+      rotation and translation up to scale. F works in pixel coordinates and has
+      seven.
+    source: Hartley & Zisserman, Multiple View Geometry, 2nd ed. — §9.6
+    figure_url: null
+  - id: q_ZVV1BEYWDSEZ
+    legacy_id: q043
+    tags:
+      - threed
+      - epi
+    difficulty: hard
+    stem: Why is the fundamental matrix rank deficient?
+    options:
+      - It is estimated from noisy correspondences
+      - It is defined only up to an arbitrary scale factor
+      - Every epipolar line passes through the epipole, which spans its null
+        space
+      - Its entries are constrained to be orthonormal
+    answer_idx: 2
+    explanation: F maps any point in one image to a line through the epipole in the
+      other, so the epipole itself satisfies Fe = 0 and F has rank two. The
+      eight-point solution must be projected back onto that constraint.
+    source: Hartley & Zisserman, Multiple View Geometry, 2nd ed. — §9.2
+    figure_url: null
+  - id: q_T8NW7Y997QNQ
+    legacy_id: q044
+    tags:
+      - threed
+      - stereo
+    difficulty: easy
+    stem: In a rectified stereo pair with baseline B and focal length f, how does
+      depth Z relate to disparity d?
+    options:
+      - Z = d/(fB)
+      - Z = f/(Bd)
+      - Z = Bd/f
+      - Z = fB/d
+    answer_idx: 3
+    explanation: Depth is inversely proportional to disparity, so precision degrades
+      quadratically with range and far points become nearly indistinguishable. A
+      wider baseline buys accuracy at the cost of a smaller shared field of
+      view.
+    source: "Szeliski, Computer Vision: Algorithms and Applications, 2nd ed. — Ch. 12"
+    figure_url: null
+  - id: q_VW4DDSP6A447
+    legacy_id: q045
+    tags:
+      - threed
+      - stereo
+    difficulty: medium
+    stem: Why is stereo matching ill-posed in textureless regions?
+    options:
+      - Many disparities give equally good photometric matches
+      - Rectification error grows where gradients are weak
+      - Occlusion boundaries always coincide with flat regions
+      - The disparity search range cannot be bounded there
+    answer_idx: 0
+    explanation: A uniform patch matches equally well at many offsets, so the data
+      term is flat and the minimum is arbitrary. Practical methods add a
+      smoothness prior or learned context to pick a plausible surface.
+    source: Scharstein & Szeliski, A Taxonomy and Evaluation of Dense Two-Frame
+      Stereo — §3
+    figure_url: null
+  - id: q_FKQTQT662285
+    legacy_id: q046
+    tags:
+      - threed
+      - stereo
+    difficulty: hard
+    stem: Why is monocular depth from a single image ambiguous up to scale?
+    options:
+      - Camera intrinsics cannot be recovered from one view
+      - A large far object and a small near one project identically
+      - Perspective projection is not differentiable at the optical centre
+      - Depth ordering requires at least two epipolar constraints
+    answer_idx: 1
+    explanation: Scaling the scene and the camera distance together leaves the image
+      unchanged, so no single view fixes absolute size. Learned monocular models
+      resolve it only by leaning on priors about familiar object sizes.
+    source: Eigen, Puhrsch & Fergus, Depth Map Prediction from a Single Image — §3.2
+    figure_url: null

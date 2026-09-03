@@ -1,0 +1,13 @@
+{
+  "name": "@quiz/schema",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "deck.schema.js",
+  "exports": {
+    ".": "./deck.schema.js",
+    "./validate": "./validate.js"
+  },
+  "dependencies": {
+    "zod": "^3.24.2"
+  }
+}

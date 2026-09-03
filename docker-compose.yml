@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: quiz-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-quiz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-quiz}
+    volumes:
+      - quiz_pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - quiz-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quiz}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: quiz-backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-quiz}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-quiz}
+      SECRET_KEY: ${SECRET_KEY}
+      BASE_URL: ${BASE_URL:-https://quiz.khayrul.me}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      DEV_AUTH: ${DEV_AUTH:-0}
+      COOKIE_SECURE: ${COOKIE_SECURE:-1}
+      RAW_UPLOAD_DIR: /data/raw
+    volumes:
+      - ./raw-uploads:/data/raw
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - quiz-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: quiz-frontend
+    ports:
+      - "${QUIZ_HTTP_PORT:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - quiz-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: quiz-nginx
+    profiles:
+      - production
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    networks:
+      - quiz-network
+
+networks:
+  quiz-network:
+    driver: bridge
+
+volumes:
+  quiz_pg_data:
+  certbot-www:

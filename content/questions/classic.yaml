@@ -1,0 +1,117 @@
+schema_version: 1
+deck_name: classic bank
+questions:
+  - id: q_M5B2W13Y517M
+    legacy_id: q034
+    tags:
+      - classic
+      - filter
+    difficulty: easy
+    stem: Why is a Gaussian blur applied before computing image gradients for edge
+      detection?
+    options:
+      - It sharpens weak edges before thresholding
+      - Differentiation amplifies high-frequency noise
+      - It makes the gradient operator rotation invariant
+      - It converts the image to a linear intensity scale
+    answer_idx: 1
+    explanation: The derivative operator has a frequency response that grows with
+      frequency, so pixel noise dominates the raw gradient. Smoothing first
+      bounds that response, and the scale of the blur sets which edges survive.
+    source: "Szeliski, Computer Vision: Algorithms and Applications, 2nd ed. — Ch. 3"
+    figure_url: null
+  - id: q_1HHXV8HS141R
+    legacy_id: q035
+    tags:
+      - classic
+      - filter
+    difficulty: medium
+    stem: What does non-maximum suppression do in the Canny edge detector?
+    options:
+      - Removes edges whose magnitude falls below the low threshold
+      - Links edge fragments into continuous contours
+      - Thins ridges by keeping pixels that are maximal along the gradient
+        direction
+      - Suppresses gradients that disagree between colour channels
+    answer_idx: 2
+    explanation: Gradient magnitude produces thick ridges several pixels wide, so
+      each pixel is compared with its two neighbours along the gradient normal
+      and kept only if it is the local maximum. Hysteresis thresholding then
+      follows.
+    source: Canny, A Computational Approach to Edge Detection — §V
+    figure_url: null
+  - id: q_3SNYRB9B4Q5G
+    legacy_id: q036
+    tags:
+      - classic
+      - feat
+    difficulty: medium
+    stem: How does SIFT achieve scale invariance?
+    options:
+      - Descriptors are normalized by the local gradient magnitude
+      - Each patch is resampled to a fixed 16×16 grid
+      - Orientation histograms are computed at several radii
+      - Keypoints are extrema of a difference-of-Gaussian scale space
+    answer_idx: 3
+    explanation: The image is convolved with Gaussians at increasing sigma and
+      differences between adjacent levels approximate the scale-normalised
+      Laplacian. Extrema over both space and scale give each keypoint a
+      characteristic scale.
+    source: Lowe, Distinctive Image Features from Scale-Invariant Keypoints — §3
+    figure_url: null
+  - id: q_NJXA9FND2K9K
+    legacy_id: q037
+    tags:
+      - classic
+      - feat
+    difficulty: medium
+    stem: What does Lowe’s ratio test compare when matching descriptors?
+    options:
+      - Nearest neighbour distance against second-nearest neighbour distance
+      - Descriptor distance against a fixed global threshold
+      - Forward and backward nearest neighbours between images
+      - Keypoint scale ratios between the two images
+    answer_idx: 0
+    explanation: An absolute distance threshold works poorly because descriptor
+      distances vary by feature. Requiring the best match to be clearly closer
+      than the runner-up rejects ambiguous matches in repetitive texture.
+    source: Lowe, Distinctive Image Features — §7.1
+    figure_url: null
+  - id: q_TMA6Q04MWV4S
+    legacy_id: q038
+    tags:
+      - classic
+      - ransac
+    difficulty: medium
+    stem: What is the minimum number of point correspondences needed to estimate a
+      2D homography?
+    options:
+      - Three, as for an affine transform
+      - Four, in general position
+      - Eight, one per matrix entry
+      - Five, from the essential matrix constraint
+    answer_idx: 1
+    explanation: A homography has eight degrees of freedom up to scale, and each
+      point correspondence supplies two equations, so four non-collinear pairs
+      suffice. RANSAC samples exactly this minimal set per hypothesis.
+    source: Hartley & Zisserman, Multiple View Geometry, 2nd ed. — §4.1
+    figure_url: null
+  - id: q_3P45KCBYEXWG
+    legacy_id: q039
+    tags:
+      - classic
+      - ransac
+    difficulty: hard
+    stem: RANSAC hypothesis count is chosen from log(1−p)/log(1−w^n). What do w and
+      n denote?
+    options:
+      - Sample weight and noise level
+      - Window radius and iteration index
+      - Inlier ratio and minimal sample size
+      - Inlier threshold and point count
+    answer_idx: 2
+    explanation: w^n is the chance that one minimal sample of n points is all
+      inliers, so the formula returns the trials needed to hit a clean sample
+      with probability p. Iterations grow steeply as the inlier ratio falls.
+    source: Hartley & Zisserman, Multiple View Geometry, 2nd ed. — §4.7
+    figure_url: null
