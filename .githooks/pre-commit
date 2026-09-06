@@ -27,6 +27,10 @@ for f in $(git diff --cached --name-only --diff-filter=ACM); do
             printf '%s: this file holds real values and must not be committed\n' "$f" >>"$FINDINGS"
             continue
             ;;
+        .claude/*)
+            printf '%s: local agent config, keep it out of the repo\n' "$f" >>"$FINDINGS"
+            continue
+            ;;
     esac
 
     # 2. Never scan this hook — it contains the patterns it looks for.
