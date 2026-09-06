@@ -4,6 +4,9 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      // Touch targets are a property of the input device, not the window width — a tablet
+      // needs 44px at 1024px wide, a desktop with a mouse does not need it at 500px.
+      screens: { coarse: { raw: '(pointer: coarse)' } },
       colors: {
         surface: {
           DEFAULT: 'rgb(var(--surface) / <alpha-value>)',
@@ -63,7 +66,7 @@ export default {
         score: ['clamp(2.5rem, 7vw, 3.625rem)', { lineHeight: '1', letterSpacing: '-0.035em' }],
       },
       borderRadius: { card: '5px', chip: '3px' },
-      maxWidth: { shell: '920px', quiz: '840px' },
+      maxWidth: { shell: '820px' },
       keyframes: {
         fadeUp: { from: { opacity: '0', transform: 'translateY(7px)' }, to: { opacity: '1', transform: 'none' } },
         fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },

@@ -1,16 +1,15 @@
 import { useTheme } from '../lib/ThemeContext';
+import { IconButton } from './controls';
 
 export function ThemeToggle() {
   const { resolved, toggleTheme } = useTheme();
   const isDark = resolved === 'dark';
 
   return (
-    <button
-      type="button"
+    <IconButton
       onClick={toggleTheme}
       aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
       title={isDark ? 'Light mode' : 'Dark mode'}
-      className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-ink-mid transition-colors hover:bg-surface-hover hover:text-ink sm:h-8 sm:w-8"
     >
       {isDark ? (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -32,6 +31,6 @@ export function ThemeToggle() {
           />
         </svg>
       )}
-    </button>
+    </IconButton>
   );
 }

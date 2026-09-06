@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { COUNT_PRESETS, DIFFICULTIES } from '../lib/quiz';
+import { COUNT_PRESETS, DIFFICULTIES, matchesDifficulty } from '../lib/quiz';
 import { useData } from '../lib/DataContext';
+import { cn } from '../lib/utils';
+import { SHELL } from '../lib/layout';
 import {
   Checkbox,
   Eyebrow,
+  FIELD,
   GhostButton,
   NeutralButton,
   PrimaryButton,
   Segmented,
   Switch,
+  TextButton,
 } from '../components/controls';
 
 function TopicCard({ topic, open, onToggleOpen, selected, onToggleSub, onToggleAll, index }) {
@@ -22,10 +26,10 @@ function TopicCard({ topic, open, onToggleOpen, selected, onToggleSub, onToggleA
 
   return (
     <div
-      className={[
+      className={cn(
         'overflow-hidden rounded-card border bg-surface-raised',
-        onCount > 0 ? 'border-accent/40' : 'border-line',
-      ].join(' ')}
+        onCount > 0 ? 'border-accent/40' : 'border-line'
+      )}
     >
       <button
         type="button"
@@ -37,8 +41,15 @@ function TopicCard({ topic, open, onToggleOpen, selected, onToggleSub, onToggleA
           <span className="block text-[16.5px] font-semibold leading-tight tracking-[-0.015em] text-ink-bright">
             {topic.name}
           </span>
-          <span className="mt-[5px] block font-mono text-[11.5px] text-ink-dim">
-            {topic.subtopics.length} tags · {topicCount} questions
+          <span className="mt-[5px] flex flex-wrap items-center gap-x-2 font-mono text-[11.5px] text-ink-dim">
+            <span>
+              {topic.subtopics.length} tags · {topicCount} questions
+            </span>
+            {topic.fromDeck && (
+              <span className="rounded-full bg-accent-wash px-[7px] py-px text-[10px] uppercase tracking-[0.08em] text-accent">
+                your deck
+              </span>
+            )}
           </span>
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-2.5">
@@ -71,14 +82,10 @@ function TopicCard({ topic, open, onToggleOpen, selected, onToggleSub, onToggleA
               </span>
             </button>
           ))}
-          <div className="px-2 pb-[3px] pt-[7px]">
-            <button
-              type="button"
-              onClick={onToggleAll}
-              className="min-h-[44px] cursor-pointer border-none bg-transparent text-[12.5px] text-accent hover:text-accent-hi sm:min-h-0"
-            >
+          <div className="px-1 pb-[3px] pt-[3px]">
+            <TextButton size="sm" onClick={onToggleAll}>
               {allOn ? 'Deselect all' : 'Select all'}
-            </button>
+            </TextButton>
           </div>
         </div>
       )}
@@ -145,7 +152,7 @@ export function TopicPicker({
     const seen = new Set();
     for (const q of deckQuestions) {
       if (!q.tags?.some((t) => tagSet.has(t))) continue;
-      if (difficulty !== 'Mixed' && q.difficulty !== difficulty) continue;
+      if (!matchesDifficulty(q.difficulty, difficulty)) continue;
       seen.add(q.id);
     }
     return seen.size;
@@ -171,7 +178,7 @@ export function TopicPicker({
 
   return (
     <>
-      <div className="mx-auto max-w-shell px-4 pb-[30px] pt-8 sm:px-7 sm:pt-[54px] lg:max-w-[720px]">
+      <div className={cn(SHELL, 'pb-[30px] pt-8 sm:pt-[54px]')}>
         <h1 className="mb-3.5 text-h1 font-bold text-ink-bright">
           Test what you know about vision and ML
         </h1>
@@ -192,15 +199,8 @@ export function TopicPicker({
               </div>
             </div>
             <div className="flex shrink-0 gap-2.5">
-              <NeutralButton className="min-h-[44px] px-4 py-[9px] text-[13.5px]" onClick={onResume}>
-                Resume
-              </NeutralButton>
-              <GhostButton
-                className="min-h-[44px] px-3.5 py-[9px] text-[13.5px]"
-                onClick={onDiscardResume}
-              >
-                Discard
-              </GhostButton>
+              <NeutralButton onClick={onResume}>Resume</NeutralButton>
+              <GhostButton onClick={onDiscardResume}>Discard</GhostButton>
             </div>
           </div>
         )}
@@ -212,13 +212,13 @@ export function TopicPicker({
               ? `${tagIds.length} tag${tagIds.length === 1 ? '' : 's'} selected`
               : 'none selected yet'}
           </span>
-          <button
-            type="button"
+          <TextButton
+            size="sm"
             onClick={() => patch({ selected: {} })}
-            className="ml-auto flex min-h-[44px] cursor-pointer items-center border-none bg-transparent px-2 text-[13px] text-ink-dim hover:text-ink sm:min-h-0 sm:py-1"
+            className="ml-auto text-ink-dim hover:text-ink"
           >
             Clear
-          </button>
+          </TextButton>
         </div>
 
         <div className="mb-[42px] grid items-start gap-3 [grid-template-columns:repeat(auto-fit,minmax(292px,1fr))]">
@@ -262,7 +262,9 @@ export function TopicPicker({
                   value={custom}
                   onChange={(e) => patch({ custom: e.target.value })}
                   aria-label="Custom question count"
-                  className="w-[76px] rounded-card border border-line-strong bg-surface px-2.5 py-2 font-mono text-[12.5px] text-ink outline-none focus:border-accent"
+                  // Same height ramp as the Segmented control it sits beside, or the row
+                  // is 8px out of line on a phone.
+                  className={cn(FIELD, 'h-9 w-[76px] px-2.5 py-0 font-mono text-[12.5px] coarse:h-11')}
                 />
               )}
             </div>
@@ -289,8 +291,11 @@ export function TopicPicker({
         </div>
       </div>
 
-      <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 bg-gradient-to-t from-surface from-60% to-transparent py-4 sm:bottom-0 sm:py-6">
-        <div className="mx-auto flex max-w-shell flex-wrap items-center gap-4 px-4 sm:px-7 lg:max-w-[720px]">
+      {/* Opaque, with a top border — the old version faded to transparent, so the status
+          line printed straight over whichever topic card happened to be behind it. Same
+          treatment as the quiz screen's action bar. */}
+      <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 border-t border-line bg-surface py-3 sm:bottom-0 sm:py-4">
+        <div className={cn(SHELL, 'flex flex-wrap items-center gap-4')}>
           <div className="min-w-0 flex-1 basis-[190px] font-mono text-[12.5px] leading-relaxed text-ink-mid">
             {startError
               ? startError
@@ -303,9 +308,10 @@ export function TopicPicker({
                     }`}
           </div>
           <PrimaryButton
+            size="lg"
             disabled={blocked}
             onClick={() => onStart({ tagIds, difficulty, count: willAsk, timed })}
-            className="min-h-[44px] w-full px-[30px] py-3.5 text-[15.5px] sm:w-auto"
+            className="w-full sm:w-auto"
           >
             Start quiz
           </PrimaryButton>

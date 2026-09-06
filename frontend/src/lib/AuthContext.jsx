@@ -19,9 +19,11 @@ export function AuthProvider({ children }) {
         await pullRemoteRuns(since);
         await flushSyncQueue();
       }
-    } catch (e) {
+    } catch {
+      // A failed /me check means "not signed in" — treat it silently so the app
+      // works offline-first with no backend configured. Only explicit user actions
+      // (login / loginDev / logout) should surface errors.
       setUser(null);
-      setError(e.message || 'Auth check failed');
     } finally {
       setLoading(false);
     }

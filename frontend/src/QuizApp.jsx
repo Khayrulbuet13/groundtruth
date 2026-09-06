@@ -354,7 +354,12 @@ export default function QuizApp() {
     <div className="min-h-dvh bg-surface">
       <AppHeader onHome={onQuiz ? saveExit : goHome} trailing={<><ThemeToggle /><LoginControl /></>}>
         {onQuiz && run.quiz ? (
-          <HeaderLink onClick={saveExit}>Save &amp; exit</HeaderLink>
+          // Shortened on narrow phones — at 320px the full label wrapped and doubled the
+          // header's height.
+          <HeaderLink onClick={saveExit}>
+            <span className="sm:hidden">Exit</span>
+            <span className="hidden sm:inline">Save &amp; exit</span>
+          </HeaderLink>
         ) : (
           <>
             <HeaderLink hideOnMobile onClick={() => navigate(ROUTES.progress)}>

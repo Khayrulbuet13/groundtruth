@@ -17,3 +17,4 @@ backend/.venv/
 *.log
 deploy/backups/
 raw-uploads/
+.scratch/

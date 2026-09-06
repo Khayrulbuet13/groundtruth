@@ -9,9 +9,11 @@ import {
 } from '../lib/quiz';
 import { useData } from '../lib/DataContext';
 import { SafeText } from '../components/SafeText';
-import { Eyebrow, GhostButton, PrimaryButton } from '../components/controls';
+import { Eyebrow, GhostButton, PrimaryButton, TextButton } from '../components/controls';
 import { BreakdownRow, band } from '../components/BreakdownRow';
 import { staggerContainer, staggerItem } from '../lib/motion';
+import { cn } from '../lib/utils';
+import { SHELL } from '../lib/layout';
 
 function useCountUp(target, { duration = 600 } = {}) {
   const [value, setValue] = useState(0);
@@ -50,10 +52,10 @@ function ReviewCard({ n, question, answer, subtopicName }) {
       <div className="mb-[11px] flex flex-wrap items-center gap-[11px]">
         <span className="font-mono text-[11px] text-ink-dim">#{n}</span>
         <span
-          className={[
+          className={cn(
             'rounded-full px-[9px] py-[3px] text-[10.5px] font-semibold uppercase tracking-[0.05em]',
             ok ? 'bg-correct-wash text-correct' : 'bg-wrong-wash text-wrong',
-          ].join(' ')}
+          )}
         >
           {ok ? 'correct' : 'missed'}
         </span>
@@ -65,13 +67,13 @@ function ReviewCard({ n, question, answer, subtopicName }) {
         <SafeText text={question.stem} />
       </div>
       <div className="mb-3 grid gap-[5px]">
-        <div className="text-[13.5px] leading-normal text-ink-mid">
-          <span className="text-ink-dim">correct&nbsp;&nbsp;</span>
+        <div className="grid grid-cols-[54px_minmax(0,1fr)] text-[13.5px] leading-normal text-ink-mid">
+          <span className="text-ink-dim">correct</span>
           <SafeText text={question.options[question.answer]} />
         </div>
         {!ok && answer?.picked != null && (
-          <div className="text-[13.5px] leading-normal text-ink-mid">
-            <span className="text-ink-dim">yours&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          <div className="grid grid-cols-[54px_minmax(0,1fr)] text-[13.5px] leading-normal text-ink-mid">
+            <span className="text-ink-dim">yours</span>
             <SafeText text={question.options[answer.picked]} />
           </div>
         )}
@@ -121,13 +123,13 @@ export function ResultsScreen({ quiz, answers, difficulty, timed, elapsed, onRet
   );
 
   return (
-    <div className="mx-auto max-w-shell px-4 pb-[70px] pt-7 sm:px-7 sm:pt-12 lg:max-w-[720px]">
+    <div className={cn(SHELL, 'pb-[70px] pt-7 sm:pt-12')}>
       <Eyebrow className="mb-[22px]">
         Session complete · {difficulty} · {timed ? formatTime(elapsed) : 'untimed'}
       </Eyebrow>
 
-      <div className="mb-4 flex flex-wrap items-end gap-6 sm:gap-[52px]">
-        <div>
+      <div className="mb-4 flex min-w-0 flex-wrap items-end gap-6 sm:gap-[52px]">
+        <div className="min-w-0">
           <div className="font-mono text-score font-bold text-ink-bright">
             {animatedCorrect}/{answers.length}
           </div>
@@ -135,9 +137,9 @@ export function ResultsScreen({ quiz, answers, difficulty, timed, elapsed, onRet
             correct
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <div
-            className={`font-mono text-[clamp(1.75rem,5vw,2.5rem)] font-bold leading-none tracking-[-0.03em] ${tone.text}`}
+            className={cn('font-mono text-[clamp(1.75rem,5vw,2.5rem)] font-bold leading-none tracking-[-0.03em]', tone.text)}
           >
             {animatedPct}%
           </div>
@@ -145,7 +147,7 @@ export function ResultsScreen({ quiz, answers, difficulty, timed, elapsed, onRet
             accuracy
           </div>
         </div>
-        <div className="flex flex-wrap gap-5 pb-[5px] sm:gap-[34px]">
+        <div className="flex min-w-0 flex-wrap gap-5 pb-[5px] sm:gap-[34px]">
           <Stat value={String(Object.keys(per).length)} label="tags covered" />
           <Stat value={timed ? formatTime(elapsed) : '—'} label={timed ? 'total time' : 'untimed'} />
           <Stat value={avgTimeLabel} label="avg time / question" />
@@ -154,7 +156,7 @@ export function ResultsScreen({ quiz, answers, difficulty, timed, elapsed, onRet
 
       <div className="mb-[42px] h-1.5 overflow-hidden rounded-full bg-line-soft">
         <div
-          className={`h-full rounded-full ${tone.bar} transition-[width] duration-500`}
+          className={cn('h-full rounded-full transition-[width] duration-500', tone.bar)}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -204,20 +206,15 @@ export function ResultsScreen({ quiz, answers, difficulty, timed, elapsed, onRet
         <PrimaryButton
           disabled={weak.length === 0}
           onClick={() => onRetryWeak(weak)}
-          className="px-[22px] py-3 text-[14.5px]"
         >
           Retry weak topics
         </PrimaryButton>
-        <GhostButton className="px-[22px] py-3 text-[14.5px]" onClick={onNewQuiz}>
+        <GhostButton onClick={onNewQuiz}>
           New quiz
         </GhostButton>
-        <button
-          type="button"
-          onClick={() => setReviewOpen((o) => !o)}
-          className="cursor-pointer border-none bg-transparent px-1 py-3 text-[13.5px] text-accent hover:text-accent-hi"
-        >
+        <TextButton onClick={() => setReviewOpen((o) => !o)}>
           {reviewOpen ? 'Hide answer review' : `Review all ${answers.length} answers`}
-        </button>
+        </TextButton>
       </div>
 
       {reviewOpen && (

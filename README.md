@@ -64,6 +64,8 @@ node scripts/build-data.mjs
 # Frontend (http://localhost:5173, proxies /api to :8000)
 cd frontend && npm ci && npm run dev
 npm test                                 # vitest
+npx playwright install chromium          # once, for the E2E suite
+npm run test:e2e                         # UI consistency at 320/390/820/1440px
 
 # Backend (needs Postgres from docker compose, or set DATABASE_URL)
 cd backend && uv venv --python 3.12 .venv
@@ -77,6 +79,9 @@ Set `DEV_AUTH=1` and `COOKIE_SECURE=0` in `.env` to use the "Dev login" button o
 ## Layout
 
 - `frontend/` — Vite + React SPA (Tailwind, IndexedDB, PWA)
+  - `src/components/controls.jsx` + `src/lib/layout.js` — the shared size and width scale.
+    Buttons take `size="sm|md|lg"`; screens wrap content in `SHELL`. Don't set per-call-site
+    padding or max-widths — `frontend/e2e/` fails the build if the two drift apart.
 - `backend/` — FastAPI: auth, run sync, deck archive
 - `content/questions/*.yaml` — the question bank (edit here)
 - `schema/` — deck JSON schema (zod), shared by frontend and build

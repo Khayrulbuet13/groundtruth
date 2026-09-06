@@ -46,26 +46,31 @@ export function LoginControl() {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
+          {/* Height comes from the shared control scale; width is content-driven because the
+              display name is shown from `sm:` up and a fixed width would clip it. */}
           <button
             type="button"
-            className="flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full border-none bg-transparent px-1 py-1 transition-colors hover:bg-surface-hover sm:min-h-0"
+            aria-label="Account menu"
+            className="flex h-9 min-w-0 max-w-[180px] shrink cursor-pointer items-center justify-center gap-2 rounded-full border-none bg-transparent px-1 transition-colors hover:bg-surface-hover coarse:h-11"
           >
             {user.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="h-7 w-7 rounded-full" />
+              <img src={user.avatar_url} alt="" className="h-7 w-7 shrink-0 rounded-full" />
             ) : (
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-hover text-ink-mid">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-hover text-ink-mid">
                 <User size={15} />
               </span>
             )}
-            <span className="hidden text-[13px] text-ink-mid sm:inline">{user.display_name}</span>
+            <span className="hidden truncate text-[13px] text-ink-mid sm:inline">
+              {user.display_name}
+            </span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => navigate(ROUTES.profile)} className="cursor-pointer gap-2">
+          <DropdownMenuItem onSelect={() => navigate(ROUTES.profile)} className="gap-2">
             <User className="h-4 w-4" /> Profile
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={logout} className="cursor-pointer gap-2">
+          <DropdownMenuItem onSelect={logout} className="gap-2">
             <LogOut className="h-4 w-4" /> Log out
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -74,24 +79,24 @@ export function LoginControl() {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="relative flex items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <GhostButton className="min-h-[44px] px-3.5 py-2 text-[13px] sm:min-h-0">
+          <GhostButton size="sm">
             Log in
           </GhostButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => login('google')} className="cursor-pointer">
+          <DropdownMenuItem onSelect={() => login('google')}>
             Continue with Google
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => login('github')} className="cursor-pointer">
+          <DropdownMenuItem onSelect={() => login('github')}>
             Continue with GitHub
           </DropdownMenuItem>
           {isLocal && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={loginDev} className="cursor-pointer">
+              <DropdownMenuItem onSelect={loginDev}>
                 Dev login
               </DropdownMenuItem>
             </>
@@ -99,7 +104,9 @@ export function LoginControl() {
         </DropdownMenuContent>
       </DropdownMenu>
       {(authError || error) && (
-        <span className="max-w-[220px] text-right text-[11px] text-wrong">{authError || error}</span>
+        <span className="absolute right-0 top-full mt-1 whitespace-nowrap text-[11px] text-wrong">
+          {authError || error}
+        </span>
       )}
     </div>
   );

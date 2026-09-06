@@ -18,6 +18,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { Eyebrow, GhostButton, PrimaryButton } from '../components/controls';
 import { BreakdownRow } from '../components/BreakdownRow';
 import { cn } from '../lib/utils';
+import { SHELL } from '../lib/layout';
 
 /** Collapsed-by-default section shell shared by every "below the fold" block. `defaultOpen` lets
  * the sections with the most signal (Mastery) start expanded instead of every section being grey. */
@@ -29,7 +30,7 @@ function Section({ title, count, defaultOpen = false, children }) {
       onOpenChange={setOpen}
       className="mb-4 rounded-card border border-line bg-surface-raised"
     >
-      <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left">
+      <CollapsibleTrigger className="flex min-h-[44px] w-full cursor-pointer items-center justify-between px-4 py-3 text-left">
         <span className="font-mono text-[10.5px] uppercase tracking-[0.13em] text-ink-dim">
           {title}
           {count != null ? ` · ${count}` : ''}
@@ -50,7 +51,7 @@ function CoverageRow({ name, seen, total, pct }) {
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
           <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
         </div>
-        <span className="w-[52px] shrink-0 text-right font-mono text-[12.5px] text-ink-mid">
+        <span className="w-[42px] shrink-0 text-right font-mono text-[12.5px] text-ink-mid">
           {seen}/{total}
         </span>
         <span className="w-[46px] shrink-0 text-right font-mono text-[11.5px] text-ink-mid">{pct}%</span>
@@ -196,7 +197,7 @@ export function ProgressScreen({ stats }) {
 
   if (!stats) {
     return (
-      <div className="mx-auto max-w-shell px-4 pb-16 pt-8 sm:px-7 lg:max-w-[720px]">
+      <div className={cn(SHELL, 'pb-16 pt-8')}>
         <Skeleton className="mb-6 h-6 w-40" />
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <Skeleton className="h-20" />
@@ -211,11 +212,11 @@ export function ProgressScreen({ stats }) {
 
   if (stats.total_runs === 0) {
     return (
-      <div className="mx-auto max-w-shell px-4 py-12 text-center lg:max-w-[720px]">
+      <div className={cn(SHELL, 'py-12 text-center')}>
         <div className="mb-5 text-sm text-ink-dim">
           No quizzes yet — finish one to see your stats here.
         </div>
-        <PrimaryButton className="px-5 py-2.5" onClick={() => navigate(ROUTES.home)}>
+        <PrimaryButton onClick={() => navigate(ROUTES.home)}>
           Start a quiz
         </PrimaryButton>
       </div>
@@ -223,7 +224,7 @@ export function ProgressScreen({ stats }) {
   }
 
   return (
-    <div className="mx-auto max-w-shell px-4 pb-16 pt-8 sm:px-7 lg:max-w-[720px]">
+    <div className={cn(SHELL, 'pb-16 pt-8')}>
       <Eyebrow className="mb-4">Your progress</Eyebrow>
 
       {!user && (
@@ -239,14 +240,13 @@ export function ProgressScreen({ stats }) {
           </div>
           <div className="mb-4 space-y-1.5">
             {drillTags.map((t) => (
-              <div key={t.id} className="flex items-center justify-between text-sm text-ink">
-                <span>{tagName(t.id)}</span>
-                <span className="font-mono text-ink-mid">{t.pct}%</span>
+              <div key={t.id} className="flex items-center justify-between gap-2 text-sm text-ink">
+                <span className="min-w-0 truncate">{tagName(t.id)}</span>
+                <span className="shrink-0 font-mono text-ink-mid">{t.pct}%</span>
               </div>
             ))}
           </div>
           <PrimaryButton
-            className="px-4 py-2"
             onClick={() => navigate(`${ROUTES.quiz}?tags=${drillTags.map((t) => t.id).join(',')}`)}
           >
             Drill these
@@ -305,7 +305,7 @@ export function ProgressScreen({ stats }) {
         ) : (
           <>
             <PrimaryButton
-              className="mb-4 px-4 py-2"
+              className="mb-4"
               disabled={dueTagIds.length === 0}
               onClick={() => navigate(`${ROUTES.quiz}?tags=${dueTagIds.join(',')}`)}
             >
@@ -338,7 +338,7 @@ export function ProgressScreen({ stats }) {
         ) : (
           <>
             <PrimaryButton
-              className="mb-4 px-4 py-2"
+              className="mb-4"
               disabled={mistakeTagIds.length === 0}
               onClick={() => navigate(`${ROUTES.quiz}?tags=${mistakeTagIds.join(',')}`)}
             >
@@ -380,7 +380,8 @@ export function ProgressScreen({ stats }) {
                   </div>
                 </div>
                 <GhostButton
-                  className="shrink-0 px-3 py-1.5 text-xs"
+                  size="sm"
+                  className="shrink-0"
                   onClick={() => handleRemoveBookmark(b.question_id)}
                 >
                   Remove
@@ -431,9 +432,9 @@ export function ProgressScreen({ stats }) {
         ) : (
           <div className="space-y-2">
             {timingRows.map((t) => (
-              <div key={t.id} className="flex items-center justify-between text-sm">
-                <span className="text-ink">{t.name}</span>
-                <span className="font-mono text-ink-mid">{Math.round(t.medianMs / 1000)}s</span>
+              <div key={t.id} className="flex items-center justify-between gap-2 text-sm">
+                <span className="min-w-0 truncate text-ink">{t.name}</span>
+                <span className="shrink-0 font-mono text-ink-mid">{Math.round(t.medianMs / 1000)}s</span>
               </div>
             ))}
           </div>

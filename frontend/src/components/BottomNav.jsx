@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { Home, BarChart3, Layers } from 'lucide-react';
 import { ROUTES } from '../lib/routes';
+import { cn } from '../lib/utils';
 
 const ITEMS = [
   { to: ROUTES.home, label: 'Home', Icon: Home, end: true },
@@ -18,14 +19,14 @@ export function BottomNav() {
           to={to}
           end={end}
           className={({ isActive }) =>
-            [
-              'flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors',
-              isActive ? 'text-accent' : 'text-ink-dim hover:text-ink',
-            ].join(' ')
+            cn(
+              'flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition-colors',
+              isActive ? 'text-accent' : 'text-ink-dim hover:text-ink'
+            )
           }
         >
           <Icon size={20} strokeWidth={1.75} />
-          {label}
+          <span className="w-full truncate text-center">{label}</span>
         </NavLink>
       ))}
     </nav>

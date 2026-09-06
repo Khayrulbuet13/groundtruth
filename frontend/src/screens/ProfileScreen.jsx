@@ -4,6 +4,8 @@ import { useAuth } from '../lib/AuthContext';
 import { api } from '../lib/api';
 import { latestSyncCursor } from '../lib/sync';
 import { ROUTES } from '../lib/routes';
+import { cn } from '../lib/utils';
+import { SHELL } from '../lib/layout';
 import { Eyebrow, GhostButton, PrimaryButton } from '../components/controls';
 import {
   Dialog,
@@ -16,7 +18,7 @@ import {
 } from '../components/ui/dialog';
 
 export function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [lastSync, setLastSync] = useState(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -49,11 +51,13 @@ export function ProfileScreen() {
   };
 
   // /profile is only linked from the logged-in avatar menu; a signed-out visit (deep link, stale
-  // tab) has nothing to show.
+  // tab) has nothing to show. Wait for the session to resolve before redirecting so a logged-in
+  // user who deep-links or refreshes is not bounced to home while the auth check is still in flight.
+  if (loading) return null;
   if (!user) return <Navigate to={ROUTES.home} replace />;
 
   return (
-    <div className="mx-auto max-w-shell px-4 pb-16 pt-8 sm:px-7 lg:max-w-[720px]">
+    <div className={cn(SHELL, 'pb-16 pt-8')}>
       <Eyebrow className="mb-4">Profile</Eyebrow>
 
       <div className="mb-8 flex items-center gap-4 rounded-card border border-line bg-surface-raised p-5">
@@ -77,12 +81,12 @@ export function ProfileScreen() {
       <Eyebrow className="mb-3">Account</Eyebrow>
       <div className="mb-8 rounded-card border border-line bg-surface-raised p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <GhostButton className="px-3 py-2" onClick={handleLogoutAll}>
+          <GhostButton onClick={handleLogoutAll}>
             Log out everywhere
           </GhostButton>
           <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <DialogTrigger asChild>
-              <GhostButton className="px-3 py-2 text-wrong">Delete account</GhostButton>
+              <GhostButton className="text-wrong">Delete account</GhostButton>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -94,7 +98,7 @@ export function ProfileScreen() {
               </DialogHeader>
               {deleteError && <p className="m-0 text-[12.5px] text-wrong">{deleteError}</p>}
               <DialogFooter>
-                <PrimaryButton className="px-3 py-2" onClick={handleDeleteAccount}>
+                <PrimaryButton onClick={handleDeleteAccount}>
                   Confirm delete
                 </PrimaryButton>
               </DialogFooter>

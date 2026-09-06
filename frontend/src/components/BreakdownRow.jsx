@@ -1,3 +1,5 @@
+import { cn } from '../lib/utils';
+
 const BAND = {
   high: { bar: 'bg-correct', text: 'text-correct' },
   mid: { bar: 'bg-accent', text: 'text-accent' },
@@ -20,14 +22,16 @@ export function BreakdownRow({ name, parentName, asked, correct }) {
         <div className="text-sm leading-snug text-ink">{name}</div>
         {parentName && <div className="mt-0.5 text-[11.5px] text-ink-dim">{parentName}</div>}
       </div>
-      <div className="flex items-center gap-3 sm:w-[220px] sm:shrink-0">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
-          <div className={`h-full rounded-full ${tone.bar}`} style={{ width: `${pct}%` }} />
+      <div className="flex min-w-0 items-center gap-3 sm:w-[220px] sm:shrink-0">
+        <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-line">
+          <div className={cn('h-full rounded-full', tone.bar)} style={{ width: `${pct}%` }} />
         </div>
         <span className="w-[42px] shrink-0 text-right font-mono text-[12.5px] text-ink-mid">
           {correct}/{asked}
         </span>
-        <span className={`w-[46px] shrink-0 text-right font-mono text-[11.5px] ${tone.text}`}>{pct}%</span>
+        <span className={cn('w-[46px] shrink-0 text-right font-mono text-[11.5px]', tone.text)}>
+          {pct}%
+        </span>
       </div>
     </div>
   );

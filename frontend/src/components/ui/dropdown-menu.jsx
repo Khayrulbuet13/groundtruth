@@ -24,7 +24,7 @@ const DropdownMenuSubTrigger = React.forwardRef(function DropdownMenuSubTrigger(
     <DropdownMenuPrimitive.SubTrigger
       ref={ref}
       className={cn(
-        'flex cursor-default select-none items-center rounded-chip px-2 py-1.5 text-sm outline-none focus:bg-accent-wash data-[state=open]:bg-accent-wash',
+        'flex min-h-[40px] cursor-pointer select-none items-center rounded-chip px-2 py-1.5 text-sm outline-none focus:bg-accent-wash data-[state=open]:bg-accent-wash',
         inset && 'pl-8',
         className
       )}
@@ -79,7 +79,7 @@ const DropdownMenuItem = React.forwardRef(function DropdownMenuItem(
     <DropdownMenuPrimitive.Item
       ref={ref}
       className={cn(
-        'relative flex cursor-default select-none items-center rounded-chip px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent-wash focus:text-ink data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'relative flex min-h-[40px] cursor-pointer select-none items-center rounded-chip px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent-wash focus:text-ink data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         inset && 'pl-8',
         className
       )}
@@ -96,7 +96,7 @@ const DropdownMenuCheckboxItem = React.forwardRef(function DropdownMenuCheckboxI
     <DropdownMenuPrimitive.CheckboxItem
       ref={ref}
       className={cn(
-        'relative flex cursor-default select-none items-center rounded-chip py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent-wash focus:text-ink data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'relative flex min-h-[40px] cursor-pointer select-none items-center rounded-chip py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent-wash focus:text-ink data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className
       )}
       checked={checked}
@@ -120,7 +120,7 @@ const DropdownMenuRadioItem = React.forwardRef(function DropdownMenuRadioItem(
     <DropdownMenuPrimitive.RadioItem
       ref={ref}
       className={cn(
-        'relative flex cursor-default select-none items-center rounded-chip py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent-wash focus:text-ink data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'relative flex min-h-[40px] cursor-pointer select-none items-center rounded-chip py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent-wash focus:text-ink data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className
       )}
       {...props}

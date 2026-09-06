@@ -1,10 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { listDecks, listQuestionsSeen, rememberQuestions } from './db';
+import { matchesDifficulty, normalizeDifficulty } from './quiz';
 
 const DataContext = createContext(null);
 
-/** Bank and deck questions both end up with a numeric `answer`. */
-const normalize = (q) => ({ ...q, answer: q.answer ?? q.answer_idx });
+/** Bank and deck questions both end up with a numeric `answer` and a title-cased difficulty. */
+const normalize = (q) => ({
+  ...q,
+  answer: q.answer ?? q.answer_idx,
+  difficulty: normalizeDifficulty(q.difficulty),
+});
 
 export function DataProvider({ children }) {
   const [index, setIndex] = useState(null);
@@ -91,7 +96,7 @@ export function DataProvider({ children }) {
         for (let c = 0; c < (meta.chunks || 1); c++) {
           const qs = await loadTagChunk(tagId, c);
           for (const q of qs) {
-            if (difficulty !== 'Mixed' && q.difficulty !== difficulty) continue;
+            if (!matchesDifficulty(q.difficulty, difficulty)) continue;
             add(q);
           }
         }
@@ -100,7 +105,7 @@ export function DataProvider({ children }) {
       for (const deck of customDecks) {
         for (const q of deck.questions || []) {
           if (!q.tags?.some((t) => tagIds.includes(t))) continue;
-          if (difficulty !== 'Mixed' && q.difficulty !== difficulty) continue;
+          if (!matchesDifficulty(q.difficulty, difficulty)) continue;
           add(normalize(q));
         }
       }
@@ -123,18 +128,49 @@ export function DataProvider({ children }) {
     [customDecks]
   );
 
+  /** Distinct tags of one imported deck, with how many of its questions carry each. */
+  const deckTagCounts = useCallback((deck) => {
+    const counts = new Map();
+    for (const q of deck.questions || []) {
+      for (const t of q.tags || []) counts.set(t, (counts.get(t) || 0) + 1);
+    }
+    return [...counts].map(([id, count]) => ({ id, count }));
+  }, []);
+
+  /**
+   * Topic groups for the picker: the curated bank first, then one group per imported deck.
+   *
+   * Decks used to be invisible here. Since a quiz is drawn by tag and the picker only ever
+   * listed bank tags, a deck tagged with anything outside the bank's vocabulary (say
+   * "chemistry") had no checkbox, so it could never be drawn — the import silently went
+   * nowhere.
+   */
   const topics = useMemo(() => {
-    if (!index?.tags) return [];
-    const parents = index.tags.filter((t) => !t.parent);
-    return parents.map((p) => ({
-      id: p.id,
-      name: p.name,
-      count: p.count,
-      subtopics: index.tags
-        .filter((t) => t.parent === p.id)
-        .map((s) => ({ id: s.id, name: s.name, count: s.count })),
+    const bank = (index?.tags || [])
+      .filter((t) => !t.parent)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        count: p.count,
+        subtopics: index.tags
+          .filter((t) => t.parent === p.id)
+          .map((s) => ({ id: s.id, name: s.name, count: s.count })),
+      }));
+
+    const decks = customDecks.map((d) => ({
+      id: `deck:${d.id}`,
+      name: d.name,
+      count: (d.questions || []).length,
+      fromDeck: true,
+      subtopics: deckTagCounts(d).map((t) => ({
+        id: t.id,
+        name: index?.tags?.find((x) => x.id === t.id)?.name || t.id,
+        count: t.count,
+      })),
     }));
-  }, [index]);
+
+    return [...bank, ...decks];
+  }, [index, customDecks, deckTagCounts]);
 
   const tagName = useCallback(
     (id) => index?.tags?.find((t) => t.id === id)?.name || id,
@@ -151,9 +187,10 @@ export function DataProvider({ children }) {
       drawFromTags,
       questionLookupSync,
       customDecks,
+      deckTagCounts,
       reloadDecks,
     }),
-    [loading, error, index, topics, tagName, drawFromTags, questionLookupSync, customDecks, reloadDecks]
+    [loading, error, index, topics, tagName, drawFromTags, questionLookupSync, customDecks, deckTagCounts, reloadDecks]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

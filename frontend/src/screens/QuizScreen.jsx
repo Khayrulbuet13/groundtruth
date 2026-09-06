@@ -3,8 +3,10 @@ import { m } from 'motion/react';
 import { Bookmark, BookmarkCheck, MoreVertical } from 'lucide-react';
 import { formatTime } from '../lib/quiz';
 import { useData } from '../lib/DataContext';
+import { cn } from '../lib/utils';
+import { SHELL } from '../lib/layout';
 import { SafeText } from '../components/SafeText';
-import { NeutralButton, PrimaryButton, Segmented } from '../components/controls';
+import { FIELD, IconButton, NeutralButton, PrimaryButton, Segmented } from '../components/controls';
 import {
   Dialog,
   DialogContent,
@@ -26,13 +28,19 @@ import { staggerContainer, staggerItem } from '../lib/motion';
 const LETTERS = ['A', 'B', 'C', 'D'];
 
 /**
- * Option card. Every card is the same min-height, same padding, same border and
- * same type size in every state — nothing about a card hints at correctness
- * until `revealed`. Text wraps inside the fixed frame instead of resizing it.
+ * Option card. Every card is the same width, the same min-height, the same padding and the
+ * same type size in every state — nothing about a card hints at correctness until
+ * `revealed`. Text wraps inside the fixed frame instead of resizing it.
+ *
+ * Two things keep that true and are easy to undo by accident:
+ *  - `w-full`, because a <button> shrink-wraps its content even at `display: grid`, which
+ *    gave every option a different width.
+ *  - the verdict column is reserved (`invisible`, not `hidden`) so revealing an answer
+ *    cannot reflow the text and change the card's height.
  */
 function OptionCard({ index, text, state, onPick }) {
   const frame =
-    'grid min-h-[68px] grid-cols-[26px_1fr_auto] items-center gap-[15px] rounded-card border px-[18px] py-[15px] text-left transition-[border-color,background-color,opacity] duration-150';
+    'grid h-full w-full grid-cols-[26px_minmax(0,1fr)] items-center gap-[15px] rounded-card border px-[18px] py-[15px] text-left transition-[border-color,background-color,opacity] duration-150 sm:grid-cols-[26px_minmax(0,1fr)_72px]';
 
   const byState = {
     idle: 'border-line bg-surface-sunken cursor-pointer hover:border-line-hover hover:bg-surface-hover',
@@ -60,23 +68,34 @@ function OptionCard({ index, text, state, onPick }) {
   return (
     <button
       type="button"
+      data-option={LETTERS[index]}
       disabled={!interactive}
       aria-pressed={state === 'picked'}
       onClick={onPick}
-      className={`${frame} ${byState} min-h-[44px] sm:min-h-[68px]`}
+      className={cn(frame, byState, 'min-h-[64px] sm:min-h-[68px]')}
     >
       <span
-        className={`flex h-[26px] items-center justify-center rounded-chip border font-mono text-[11.5px] font-medium ${keyByState}`}
+        className={cn(
+          'flex h-[26px] items-center justify-center rounded-chip border font-mono text-[11.5px] font-medium',
+          keyByState
+        )}
       >
         {LETTERS[index]}
       </span>
       <span className="text-pretty text-[15.5px] leading-normal text-ink">
         <SafeText text={text} />
       </span>
+      {/* The visible verdict is desktop-only (it costs too much width on a phone), so the
+          state still has to reach a screen reader on every viewport. */}
+      {tag && <span className="sr-only">{tag.label}</span>}
       <span
-        className={`whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.09em] ${tag ? tag.cls : 'hidden'}`}
+        aria-hidden={!tag}
+        className={cn(
+          'hidden text-right font-mono text-[10px] uppercase leading-tight tracking-[0.09em] sm:block',
+          tag ? tag.cls : 'invisible'
+        )}
       >
-        {tag?.label}
+        {tag?.label ?? 'correct'}
       </span>
     </button>
   );
@@ -175,7 +194,7 @@ export function QuizScreen({
   };
 
   return (
-    <div className="mx-auto max-w-quiz px-4 pb-28 pt-4 sm:px-7 sm:pb-16 sm:pt-[38px] lg:max-w-[720px]">
+    <div className={cn(SHELL, 'pb-28 pt-4 sm:pb-16 sm:pt-[38px]')}>
       <div className="flex items-center gap-3.5">
         <span className="font-mono text-[12.5px] font-medium text-ink-mid">
           Question {index + 1} of {quiz.length}
@@ -186,29 +205,20 @@ export function QuizScreen({
           </span>
         )}
         <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
+          <IconButton
             onClick={toggleBookmark}
+            active={bookmarked}
             aria-pressed={bookmarked}
             aria-label={bookmarked ? 'Saved for review' : 'Save for review'}
             title={bookmarked ? 'Saved for review' : 'Save for review'}
-            className={[
-              'flex cursor-pointer items-center justify-center rounded-full border-none p-[7px] transition-colors',
-              bookmarked ? 'bg-accent-wash text-accent' : 'bg-transparent text-ink-dim hover:text-ink',
-            ].join(' ')}
           >
             {bookmarked ? <BookmarkCheck size={15} /> : <Bookmark size={15} />}
-          </button>
+          </IconButton>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                title="More options"
-                aria-label="More options"
-                className="flex cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-[7px] text-ink-dim transition-colors hover:text-ink"
-              >
+              <IconButton title="More options" aria-label="More options">
                 <MoreVertical size={15} />
-              </button>
+              </IconButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={() => setReportOpen(true)}>
@@ -238,7 +248,7 @@ export function QuizScreen({
             onChange={setReason}
           />
           <textarea
-            className="w-full rounded-card border border-line bg-surface p-2 text-sm text-ink"
+            className={FIELD}
             placeholder="Optional details"
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -247,11 +257,7 @@ export function QuizScreen({
           {reportError && <p className="m-0 text-[12.5px] text-wrong">{reportError}</p>}
           {reportSent && <p className="m-0 text-[12.5px] text-correct">Report sent. Thank you!</p>}
           <DialogFooter>
-            <PrimaryButton
-              className="px-[18px] py-2.5 text-[13.5px]"
-              disabled={reportSent}
-              onClick={submitReport}
-            >
+            <PrimaryButton disabled={reportSent} onClick={submitReport}>
               {reportSent ? 'Sent' : 'Submit report'}
             </PrimaryButton>
           </DialogFooter>
@@ -286,15 +292,17 @@ export function QuizScreen({
         <SafeText text={q.stem} />
       </h2>
 
+      {/* `auto-rows-fr` makes all four rows the height of the tallest, so the four cards are
+          one uniform block rather than four differently-sized boxes. */}
       <m.div
         key={q.id}
-        className="grid gap-2.5"
+        className="grid auto-rows-fr gap-2.5"
         variants={staggerContainer}
         initial="initial"
         animate="animate"
       >
         {q.options.map((text, k) => (
-          <m.div key={k} variants={staggerItem}>
+          <m.div key={k} variants={staggerItem} className="h-full">
             <OptionCard
               index={k}
               text={text}
@@ -314,10 +322,10 @@ export function QuizScreen({
         >
           <div className="flex flex-wrap items-center gap-3">
             <span
-              className={[
+              className={cn(
                 'rounded-full px-[11px] py-1 text-[11.5px] font-semibold uppercase tracking-[0.04em] text-on-accent',
-                wasRight ? 'bg-correct' : 'bg-wrong',
-              ].join(' ')}
+                wasRight ? 'bg-correct' : 'bg-wrong'
+              )}
             >
               {wasRight ? 'Correct' : 'Incorrect'}
             </span>
@@ -338,12 +346,9 @@ export function QuizScreen({
       )}
 
       {(revealed || picked !== null) && (
-        <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-line bg-surface/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mt-6 sm:border-none sm:bg-transparent sm:p-0">
-          <div className="mx-auto flex max-w-quiz animate-fadeUp items-center gap-3.5 lg:max-w-[720px]">
-            <NeutralButton
-              className="min-h-[44px] flex-1 px-[26px] py-[13px] text-[15px] sm:flex-none"
-              onClick={revealed ? onAdvance : onReveal}
-            >
+        <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-line bg-surface pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:mt-6 sm:border-none sm:bg-transparent sm:p-0">
+          <div className={cn(SHELL, 'flex animate-fadeUp items-center gap-3.5 sm:p-0')}>
+            <NeutralButton size="lg" className="flex-1 sm:flex-none" onClick={revealed ? onAdvance : onReveal}>
               {revealed ? (last ? 'See results' : 'Next question') : 'Check answer'}
             </NeutralButton>
             <span className="hidden font-mono text-[11.5px] text-ink-faint sm:inline">enter</span>

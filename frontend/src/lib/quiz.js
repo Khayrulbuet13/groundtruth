@@ -2,6 +2,23 @@ export const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Mixed'];
 export const COUNT_PRESETS = [10, 25, 50, 'Custom'];
 export const WEAK_THRESHOLD = 0.6;
 
+/**
+ * The bank build script title-cases difficulty ("easy" -> "Easy") but an uploaded deck keeps
+ * the lowercase value the schema requires, so a plain `===` silently dropped every imported
+ * question as soon as a difficulty other than Mixed was picked. Compare case-insensitively.
+ */
+export function matchesDifficulty(questionDifficulty, wanted) {
+  if (!wanted || wanted === 'Mixed') return true;
+  return String(questionDifficulty).toLowerCase() === String(wanted).toLowerCase();
+}
+
+/** Title-case a difficulty for display and for storage alongside bank questions. */
+export function normalizeDifficulty(d) {
+  if (!d) return d;
+  const s = String(d);
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
 /** Deterministic LCG shuffle — same seed gives the same order, so a session can be replayed. */
 export function shuffle(arr, seed = 1) {
   const a = arr.slice();
@@ -20,7 +37,7 @@ export function pool(questions, tagIds, difficulty) {
   for (const q of questions) {
     const tags = q.tags || [];
     if (!tags.some((t) => tagSet.has(t))) continue;
-    if (difficulty !== 'Mixed' && q.difficulty !== difficulty) continue;
+    if (!matchesDifficulty(q.difficulty, difficulty)) continue;
     if (!seen.has(q.id)) seen.set(q.id, q);
   }
   return [...seen.values()];

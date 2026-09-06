@@ -1,16 +1,29 @@
+import { cn } from '../lib/utils';
+import { SHELL } from '../lib/layout';
+import { Logo } from './Logo';
+
+/** Every direct child of the header row is this tall, so the row has one baseline. */
+const HEADER_CONTROL = 'inline-flex h-9 items-center coarse:h-11';
+
 export function AppHeader({ children, trailing, onHome }) {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-surface/[0.93] backdrop-blur">
-      <div className="mx-auto flex max-w-shell items-center gap-3 px-4 py-[13px] sm:px-7">
+      {/* No flex-wrap: a long name or an error message must never push the header to a
+          second row and land on top of the page content underneath it. */}
+      <div className={cn(SHELL, 'flex items-center gap-3 py-2')}>
         <button
           type="button"
           onClick={onHome}
           aria-label="Home"
-          className="flex min-h-[44px] shrink-0 cursor-pointer items-center border-none bg-transparent p-0 font-mono text-sm font-bold tracking-[-0.01em] text-ink sm:min-h-0"
+          className={cn(
+            HEADER_CONTROL,
+            'shrink-0 cursor-pointer gap-2 border-none bg-transparent p-0 font-mono text-sm font-bold tracking-[-0.01em] text-ink transition-colors hover:text-accent'
+          )}
         >
+          <Logo size={19} className="text-accent" />
           groundtruth
         </button>
-        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-3 sm:gap-4">
+        <div className="ml-auto flex min-w-0 items-center justify-end gap-1 sm:gap-2">
           {children}
           {trailing}
         </div>
@@ -25,10 +38,11 @@ export function HeaderLink({ children, onClick, hideOnMobile = false }) {
     <button
       type="button"
       onClick={onClick}
-      className={[
-        'min-h-[44px] cursor-pointer border-none bg-transparent px-1 py-1.5 text-[13px] text-ink-mid transition-colors hover:text-ink sm:min-h-0',
-        hideOnMobile ? 'hidden sm:inline-flex sm:items-center' : '',
-      ].join(' ')}
+      className={cn(
+        HEADER_CONTROL,
+        'shrink-0 cursor-pointer whitespace-nowrap rounded-card border-none bg-transparent px-2 text-[13px] text-ink-mid transition-colors hover:text-ink',
+        hideOnMobile && 'hidden sm:inline-flex'
+      )}
     >
       {children}
     </button>

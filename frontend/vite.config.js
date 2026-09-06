@@ -22,7 +22,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'groundtruth',
         short_name: 'groundtruth',
@@ -32,13 +32,21 @@ export default defineConfig({
         background_color: '#1d1e20',
         display: 'standalone',
         start_url: '/',
+        // `maskable` needs its own art with a safe zone. The old entry marked one square
+        // tile as both `any` and `maskable`, so Android cropped into the crosshair. PNGs
+        // are the baseline because some launchers still ignore SVG icons.
         icons: [
-          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
-        globIgnores: ['**/data/**'],
+        globPatterns: ['**/*.{js,css,html,svg,woff2,png}'],
+        // og-image is for link-preview crawlers only — no reason to spend the install-time
+        // download or the offline cache on it.
+        globIgnores: ['**/data/**', '**/og-image.png'],
         runtimeCaching: [
           {
             urlPattern: /\/data\/.*\.json$/,
