@@ -1,0 +1,55 @@
+#!/bin/sh
+# Blocks staged secrets before they reach a public repo.
+#
+# Enable once per clone:   git config core.hooksPath .githooks
+# Deliberate override:     git commit --no-verify
+set -u
+
+FINDINGS=$(mktemp) || exit 1
+trap 'rm -f "$FINDINGS"' EXIT
+
+SELF="githooks/pre-commit"
+
+# Key shapes that are always a secret, whatever the surrounding text.
+SHAPES='GOCSPX-[A-Za-z0-9_-]{10,}|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+
+# A secret-ish key assigned a long, real-looking value.
+ASSIGN='(SECRET|PASSWORD|TOKEN|CLIENT_SECRET|API_KEY)[A-Z_]*[=:][[:space:]]*.?[A-Za-z0-9+/_-]{20,}'
+
+# Values that are obviously placeholders, not real credentials.
+PLACEHOLDER='change-me|changeme|your-|yourname|example|placeholder|xxxxx|\$\{|<[A-Z_]+>'
+
+for f in $(git diff --cached --name-only --diff-filter=ACM); do
+    # 1. Files that must never be committed at all (git add -f bypasses .gitignore)
+    case "$f" in
+        .env.example) ;;
+        .env|.env.*|*.local.md|*.local.env|*.local.yml)
+            printf '%s: this file holds real values and must not be committed\n' "$f" >>"$FINDINGS"
+            continue
+            ;;
+    esac
+
+    # 2. Never scan this hook — it contains the patterns it looks for.
+    case "$f" in
+        *"$SELF") continue ;;
+    esac
+
+    blob=$(git show ":$f" 2>/dev/null) || continue
+
+    printf '%s\n' "$blob" | LC_ALL=C grep -naE "$SHAPES" 2>/dev/null \
+        | sed "s|^|$f:|" >>"$FINDINGS"
+
+    printf '%s\n' "$blob" | LC_ALL=C grep -naE "$ASSIGN" 2>/dev/null \
+        | LC_ALL=C grep -avEi "$PLACEHOLDER" \
+        | sed "s|^|$f:|" >>"$FINDINGS"
+done
+
+if [ -s "$FINDINGS" ]; then
+    printf '\npre-commit: possible secret in staged changes — commit blocked\n\n' >&2
+    sed 's/^/  /' "$FINDINGS" >&2
+    printf '\nMove real values into .env or a *.local.md file (both gitignored).\n' >&2
+    printf 'If this is a false positive: git commit --no-verify\n\n' >&2
+    exit 1
+fi
+
+exit 0

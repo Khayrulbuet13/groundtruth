@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: quiz-postgres
+    container_name: gt-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-quiz}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -21,11 +21,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: quiz-backend
+    container_name: gt-backend
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-quiz}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-quiz}
       SECRET_KEY: ${SECRET_KEY}
-      BASE_URL: ${BASE_URL:-https://quiz.khayrul.me}
+      BASE_URL: ${BASE_URL:-http://localhost:8080}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -46,9 +46,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: quiz-frontend
+    container_name: gt-frontend
     ports:
-      - "${QUIZ_HTTP_PORT:-8080}:80"
+      - "0.0.0.0:${QUIZ_HTTP_PORT:-8080}:80"
     depends_on:
       - backend
     restart: unless-stopped
@@ -57,7 +57,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: quiz-nginx
+    container_name: gt-nginx
     profiles:
       - production
     ports:
