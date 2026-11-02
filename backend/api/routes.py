@@ -9,7 +9,8 @@ from urllib.parse import quote, urlencode
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +30,7 @@ from api.auth import (
 from api.database import get_session
 from api.raw_store import store_raw_upload, unlink_user_from_manifest
 from api.settings import settings
-from models.db import QuestionReport, QuizRun, User
+from models.db import AuthSession, Identity, QuestionReport, QuizRun, User
 
 router = APIRouter(prefix="/api/v1")
 ALLOWED_PROVIDERS = {"github", "google"}
@@ -132,9 +133,16 @@ async def delete_account(
     user: User = Depends(require_user),
     session: AsyncSession = Depends(get_session),
 ):
-    await session.delete(user)
+    # Bulk deletes instead of session.delete(user): the ORM cascade would first load every
+    # session and quiz run (with its attempts JSON) into memory and delete them row by row.
+    for model in (QuizRun, AuthSession, Identity):
+        await session.execute(delete(model).where(model.user_id == user.id))
+    await session.execute(
+        update(QuestionReport).where(QuestionReport.user_id == user.id).values(user_id=None)
+    )
+    await session.execute(delete(User).where(User.id == user.id))
     await session.commit()
-    unlink_user_from_manifest(str(user.id))
+    await run_in_threadpool(unlink_user_from_manifest, str(user.id))
     # Cookies must be set on the Response object we actually return.
     response = Response(status_code=204)
     response.delete_cookie(SESSION_COOKIE, **cookie_kwargs())
@@ -145,6 +153,11 @@ async def delete_account(
 async def auth_start(provider: str, response: Response):
     if provider not in ALLOWED_PROVIDERS:
         raise HTTPException(400, "Unsupported provider")
+    client_id = settings.github_client_id if provider == "github" else settings.google_client_id
+    if not client_id:
+        # Otherwise the user is sent to the provider with an empty client_id and lands on
+        # the provider's own error page instead of an in-app message.
+        raise HTTPException(503, f"{provider.capitalize()} sign-in is not configured")
     # The nonce lives both in the signed state and in a short-lived cookie, so a
     # callback only completes in the browser that started the flow (login CSRF).
     nonce = secrets.token_urlsafe(16)
@@ -311,11 +324,11 @@ async def sync_push(
             synced_at=synced_at,
         )
         # On conflict only the owner may update the row; a foreign id is ignored.
-        update = {k: v for k, v in values.items() if k not in ("id", "user_id")}
+        changes = {k: v for k, v in values.items() if k not in ("id", "user_id")}
         insert = pg_insert if session.bind.dialect.name == "postgresql" else sqlite_insert
         stmt = insert(QuizRun).values(**values)
         stmt = stmt.on_conflict_do_update(
-            index_elements=[QuizRun.id], set_=update, where=(QuizRun.user_id == user.id)
+            index_elements=[QuizRun.id], set_=changes, where=(QuizRun.user_id == user.id)
         )
         await session.execute(stmt)
         results.append({"id": str(run.id), "synced_at": synced_at.isoformat()})
@@ -396,7 +409,9 @@ async def contribute(
     deck_name = data.get("deck_name") or data.get("name") or "Untitled"
     questions = data.get("questions") or []
     try:
-        store_raw_upload(
+        # Sync file IO (and a full manifest scan for the daily limit) — keep it off the event loop.
+        await run_in_threadpool(
+            store_raw_upload,
             user_id=str(user.id),
             body=body,
             deck_name=deck_name,

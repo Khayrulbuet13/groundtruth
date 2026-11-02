@@ -111,7 +111,8 @@ export function DeckScreen() {
     const tags = deckTagCounts(deck).map((t) => t.id);
     if (!tags.length) return;
     navigate(
-      `${ROUTES.quiz}?tags=${encodeURIComponent(tags.join(','))}&count=${deck.questions?.length || 10}`
+      `${ROUTES.quiz}?deck=${encodeURIComponent(deck.id)}&tags=${encodeURIComponent(tags.join(','))}` +
+        `&count=${deck.questions?.length || 10}`
     );
   };
 

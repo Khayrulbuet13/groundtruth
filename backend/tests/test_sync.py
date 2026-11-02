@@ -21,6 +21,7 @@ async def client(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "dev_auth", True)
     monkeypatch.setattr(settings, "cookie_secure", False)
     monkeypatch.setattr(settings, "raw_upload_dir", str(tmp_path / "raw"))
+    monkeypatch.setattr(settings, "github_client_id", "test-github-client")
 
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with engine.begin() as conn:
@@ -240,6 +241,27 @@ async def test_oauth_callback_rejects_missing_nonce(client, monkeypatch):
     )
     assert res.status_code == 302
     assert "auth_error=oauth_failed" in res.headers["location"]
+
+
+async def test_oauth_start_rejects_unconfigured_provider(client, monkeypatch):
+    ac, _ = client
+    monkeypatch.setattr(settings, "google_client_id", "")
+    res = await ac.post("/api/v1/auth/google/start")
+    assert res.status_code == 503
+
+
+async def test_delete_account_removes_runs_and_sessions(client):
+    ac, Session = client
+    cookies, user = await _auth_cookies(Session, "gone@example.com")
+    user_id = user.id
+    run_id = uuid.uuid4()
+    assert (await ac.post("/api/v1/sync", json=_run_payload(run_id, 1), cookies=cookies)).status_code == 200
+    res = await ac.delete("/api/v1/account", cookies=cookies)
+    assert res.status_code == 204
+    async with Session() as s:
+        assert await s.get(User, user_id) is None
+        assert await s.get(QuizRun, run_id) is None
+        assert (await s.scalars(select(AuthSession))).all() == []
 
 
 async def test_sync_cannot_overwrite_other_user(client):

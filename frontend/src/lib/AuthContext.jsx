@@ -22,22 +22,27 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
   // Monotonic id so a slow, older /me response can't overwrite a newer one.
   const requestId = useRef(0);
+  const lastRefresh = useRef(0);
 
   const refresh = useCallback(async () => {
     const id = ++requestId.current;
-    let me = null;
+    lastRefresh.current = Date.now();
+    let me;
     try {
       me = await api.me();
     } catch {
-      // A failed /me check means "not signed in" — treat it silently so the app
-      // works offline-first with no backend configured. Only explicit user actions
-      // (login / loginDev / logout) should surface errors.
+      // Offline, no backend, 5xx or 429: we can't tell, so keep whatever we knew (null on a
+      // cold start, so the app still works offline-first). Only an explicit
+      // `authenticated: false` or a 401 (handled by setUnauthorizedHandler) signs the user out.
+      // Only explicit user actions (login / loginDev / logout) surface errors.
+      setLoading(false);
+      return;
     }
+    setLoading(false);
     if (id !== requestId.current) return;
     const authed = me?.authenticated ? me : null;
     setUser(authed);
     setError(null);
-    setLoading(false);
     if (authed) syncAfterAuth();
   }, []);
 
@@ -45,11 +50,15 @@ export function AuthProvider({ children }) {
     setUnauthorizedHandler(() => {
       requestId.current += 1; // invalidate any in-flight /me
       setUser(null);
+      setLoading(false);
     });
     refresh();
 
+    // Re-check on tab focus, but not on every alt-tab: each refresh is /me + a sync pull.
     const onVis = () => {
-      if (document.visibilityState === 'visible') refresh();
+      if (document.visibilityState === 'visible' && Date.now() - lastRefresh.current > 60_000) {
+        refresh();
+      }
     };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);

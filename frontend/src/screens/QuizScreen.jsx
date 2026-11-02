@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { m } from 'motion/react';
-import { Bookmark, BookmarkCheck, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Bookmark, BookmarkCheck, MoreVertical } from 'lucide-react';
 import { formatTime } from '../lib/quiz';
 import { useData } from '../lib/DataContext';
 import { cn } from '../lib/utils';
 import { SHELL } from '../lib/layout';
 import { SafeText } from '../components/SafeText';
-import { FIELD, IconButton, NeutralButton, PrimaryButton, Segmented } from '../components/controls';
+import { FIELD, GhostButton, IconButton, NeutralButton, PrimaryButton, Segmented } from '../components/controls';
 import {
   Dialog,
   DialogContent,
@@ -104,6 +104,8 @@ function OptionCard({ index, text, state, onPick }) {
 export function QuizScreen({
   quiz,
   index,
+  liveIndex = index,
+  reviewing = false,
   picked,
   revealed,
   elapsed,
@@ -111,12 +113,23 @@ export function QuizScreen({
   onPick,
   onReveal,
   onAdvance,
+  onBack,
 }) {
   const { tagName } = useData();
   const q = quiz[index];
   const last = index + 1 >= quiz.length;
   const wasRight = revealed && picked === q.answer;
-  const progress = ((index + (revealed ? 1 : 0)) / quiz.length) * 100;
+  // Progress tracks the live question, so stepping back to review doesn't shrink the bar.
+  const progress = ((liveIndex + (revealed && !reviewing ? 1 : 0)) / quiz.length) * 100;
+  const primaryLabel = reviewing
+    ? index + 1 >= liveIndex
+      ? `Back to question ${liveIndex + 1}`
+      : 'Next'
+    : revealed
+      ? last
+        ? 'See results'
+        : 'Next question'
+      : 'Check answer';
 
   const [bookmarked, setBookmarked] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -173,6 +186,7 @@ export function QuizScreen({
       if (reportOpen) return;
       const tag = e.target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key === 'ArrowLeft' && onBack) return onBack();
       const k = e.key.toLowerCase();
       if (k === 'f') return toggleBookmark();
       if (!revealed && '1234'.includes(k)) return onPick(Number(k) - 1);
@@ -184,7 +198,7 @@ export function QuizScreen({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [reportOpen, revealed, picked, onPick, onReveal, onAdvance, toggleBookmark]);
+  }, [reportOpen, revealed, picked, onPick, onReveal, onAdvance, onBack, toggleBookmark]);
 
   const optionState = (k) => {
     if (!revealed) return picked === k ? 'picked' : 'idle';
@@ -199,6 +213,11 @@ export function QuizScreen({
         <span className="font-mono text-[12.5px] font-medium text-ink-mid">
           Question {index + 1} of {quiz.length}
         </span>
+        {reviewing && (
+          <span className="rounded-full border border-line-strong px-[9px] py-0.5 font-mono text-[10.5px] uppercase tracking-[0.07em] text-ink-dim">
+            Reviewing
+          </span>
+        )}
         {timed && (
           <span className="font-mono text-[12.5px] font-medium text-ink-dim">
             · {formatTime(elapsed)}
@@ -345,20 +364,29 @@ export function QuizScreen({
         </m.div>
       )}
 
-      {(revealed || picked !== null) && (
+      {(revealed || picked !== null || onBack) && (
         <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-line bg-surface pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:static sm:mt-6 sm:border-none sm:bg-transparent sm:p-0">
           <div className={cn(SHELL, 'flex animate-fadeUp items-center gap-3.5 sm:p-0')}>
-            <NeutralButton size="lg" className="flex-1 sm:flex-none" onClick={revealed ? onAdvance : onReveal}>
-              {revealed ? (last ? 'See results' : 'Next question') : 'Check answer'}
-            </NeutralButton>
-            <span className="hidden font-mono text-[11.5px] text-ink-faint sm:inline">enter</span>
+            {onBack && (
+              <GhostButton size="lg" onClick={onBack}>
+                <ArrowLeft size={16} /> Back
+              </GhostButton>
+            )}
+            {(revealed || picked !== null) && (
+              <NeutralButton size="lg" className="flex-1 sm:flex-none" onClick={revealed ? onAdvance : onReveal}>
+                {primaryLabel}
+              </NeutralButton>
+            )}
+            <span className="hidden font-mono text-[11.5px] text-ink-faint sm:inline">
+              {onBack ? '← back · enter' : 'enter'}
+            </span>
           </div>
         </div>
       )}
 
       {!revealed && (
         <div className="mt-[26px] hidden font-mono text-[11.5px] leading-relaxed text-ink-faint sm:block">
-          1–4 select · enter confirm · f save
+          1–4 select · enter confirm · ← back · f save
         </div>
       )}
     </div>

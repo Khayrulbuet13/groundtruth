@@ -82,15 +82,16 @@ export function DataProvider({ children }) {
     [rememberLocally]
   );
 
+  /** `deckId` limits the draw to one imported deck (its Practice button) — no bank questions. */
   const drawFromTags = useCallback(
-    async (tagIds, difficulty) => {
+    async (tagIds, difficulty, { deckId } = {}) => {
       if (!index) return [];
       const seen = new Map();
       const add = (q) => {
         if (!seen.has(q.id)) seen.set(q.id, q);
       };
 
-      for (const tagId of tagIds) {
+      for (const tagId of deckId ? [] : tagIds) {
         const meta = index.tags.find((t) => t.id === tagId);
         if (!meta) continue;
         for (let c = 0; c < (meta.chunks || 1); c++) {
@@ -103,6 +104,7 @@ export function DataProvider({ children }) {
       }
 
       for (const deck of customDecks) {
+        if (deckId && deck.id !== deckId) continue;
         for (const q of deck.questions || []) {
           if (!q.tags?.some((t) => tagIds.includes(t))) continue;
           if (!matchesDifficulty(q.difficulty, difficulty)) continue;

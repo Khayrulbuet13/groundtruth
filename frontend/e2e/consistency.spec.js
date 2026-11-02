@@ -284,3 +284,25 @@ test('no unhandled console errors on any screen', async ({ page }) => {
   // The auth probe 404/500s without a backend; that is expected and must stay silent.
   expect(errors.filter((e) => !/Failed to load resource|api\/v1/.test(e))).toEqual([]);
 });
+
+test('Back revisits an answered question read-only, then returns to the live one', async ({ page }) => {
+  await startQuiz(page);
+  await expect(page.getByRole('button', { name: /Back/ })).toHaveCount(0);
+
+  await page.locator('main button[data-option]').first().click();
+  await page.getByRole('button', { name: 'Check answer' }).click();
+  await page.getByRole('button', { name: /Next question/ }).click();
+  await expect(page.getByText('Question 2 of')).toBeVisible();
+
+  await page.getByRole('button', { name: /Back/ }).click();
+  await expect(page.getByText('Question 1 of')).toBeVisible();
+  await expect(page.getByText('Reviewing', { exact: true })).toBeVisible();
+  // Answered state is shown and can't be changed.
+  await expect(page.getByText(/^(Correct|Incorrect)$/)).toBeVisible();
+  await expect(page.locator('main button[data-option]:not([disabled])')).toHaveCount(0);
+
+  await page.getByRole('button', { name: /Back to question 2/ }).click();
+  await expect(page.getByText('Question 2 of')).toBeVisible();
+  await expect(page.getByText('Reviewing', { exact: true })).toHaveCount(0);
+  await expect(page.locator('main button[data-option]:not([disabled])')).toHaveCount(4);
+});

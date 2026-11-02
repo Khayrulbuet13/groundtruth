@@ -4,8 +4,7 @@ import { AnimatePresence, m } from 'motion/react';
 import { buildQuiz } from './lib/quiz';
 import { useQuizSession } from './lib/useQuizSession';
 import { useData } from './lib/DataContext';
-import { completeRun, getAllRunsLocal } from './lib/sync';
-import { buildStats } from './lib/stats';
+import { completeRun } from './lib/sync';
 import { newId } from './lib/db';
 import { cn } from './lib/utils';
 import { ROUTES } from './lib/routes';
@@ -43,6 +42,8 @@ const emptyRun = {
   tagIds: [],
   difficulty: 'Mixed',
   timed: false,
+  // Index of an earlier, already-answered question being looked at via "Back"; null = live question.
+  viewing: null,
 };
 
 /** localStorage/`saved` shape for a paused run — no question objects duplicated beyond the quiz itself. */
@@ -70,7 +71,7 @@ function PageTransition({ children }) {
 
 /** Renders the active quiz, or resolves a `/quiz` visit that isn't mid-session: a `?tags=` deep link
  * starts a fresh drill, a saved session resumes, otherwise there's nothing to do here. */
-function QuizRoute({ run, saved, startQuiz, resume, pick, reveal, advance }) {
+function QuizRoute({ run, saved, startQuiz, resume, pick, reveal, advance, back }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const attempted = useRef(false);
@@ -86,6 +87,7 @@ function QuizRoute({ run, saved, startQuiz, resume, pick, reveal, advance }) {
           difficulty: searchParams.get('difficulty') || 'Mixed',
           count: Number(searchParams.get('count')) || 10,
           timed: searchParams.get('timed') === '1',
+          deckId: searchParams.get('deck') || undefined,
         },
         { replace: true }
       );
@@ -100,12 +102,19 @@ function QuizRoute({ run, saved, startQuiz, resume, pick, reveal, advance }) {
 
   if (!run.quiz) return null;
 
+  // Reviewing an earlier question shows it exactly as it was answered: read-only, revealed.
+  const reviewing = run.viewing !== null;
+  const shown = reviewing ? run.viewing : run.index;
+
   return (
     <QuizScreen
       quiz={run.quiz}
-      index={run.index}
-      picked={run.picked}
-      revealed={run.revealed}
+      index={shown}
+      liveIndex={run.index}
+      reviewing={reviewing}
+      picked={reviewing ? run.answers[shown]?.picked ?? null : run.picked}
+      revealed={reviewing || run.revealed}
+      onBack={shown > 0 ? back : undefined}
       elapsed={run.elapsed}
       timed={run.timed}
       onPick={pick}
@@ -139,27 +148,17 @@ function ResultsRoute({ result, retryWeak, onNewQuiz }) {
 }
 
 export default function QuizApp() {
-  const { topics, index, loading, error, drawFromTags, questionLookupSync, tagName } = useData();
+  const { topics, index, loading, error, drawFromTags } = useData();
   const location = useLocation();
   const navigate = useNavigate();
   const [config, setConfig] = useState(INITIAL_CONFIG);
   const [run, setRun] = useState(emptyRun);
   const [result, setResult] = useState(null);
   const [startError, setStartError] = useState(null);
-  const [stats, setStats] = useState(null);
   const { saved, save, clear, setSaved } = useQuizSession();
 
   const runRef = useRef(run);
   runRef.current = run;
-
-  const refreshStats = useCallback(async () => {
-    const runs = await getAllRunsLocal();
-    setStats(buildStats(runs, questionLookupSync, tagName));
-  }, [questionLookupSync, tagName]);
-
-  useEffect(() => {
-    if (location.pathname === ROUTES.progress) refreshStats();
-  }, [location.pathname, refreshStats]);
 
   const persist = useCallback((r) => save(toSession(r)), [save]);
 
@@ -169,11 +168,11 @@ export default function QuizApp() {
     return () => clearInterval(id);
   }, [location.pathname, run.timed]);
 
-  const startQuiz = async ({ tagIds, difficulty, count, timed }, { replace = false } = {}) => {
+  const startQuiz = async ({ tagIds, difficulty, count, timed, deckId }, { replace = false } = {}) => {
     setStartError(null);
     let questions;
     try {
-      questions = await drawFromTags(tagIds, difficulty);
+      questions = await drawFromTags(tagIds, difficulty, { deckId });
     } catch {
       setStartError('Could not load questions. Check your connection and try again.');
       return;
@@ -201,10 +200,18 @@ export default function QuizApp() {
     navigate(ROUTES.quiz, { replace });
   };
 
-  const pick = (k) => setRun((r) => (r.revealed ? r : { ...r, picked: k }));
+  const pick = (k) => setRun((r) => (r.revealed || r.viewing !== null ? r : { ...r, picked: k }));
+
+  /** Step back to the previous answered question (read-only). */
+  const back = () =>
+    setRun((r) => {
+      const cur = r.viewing ?? r.index;
+      return cur > 0 ? { ...r, viewing: cur - 1 } : r;
+    });
 
   const reveal = () => {
     const r = runRef.current;
+    if (r.viewing !== null || r.picked === null) return;
     const q = r.quiz[r.index];
     const timeSpentMs = r.questionStartedAt ? Date.now() - r.questionStartedAt : 0;
     const next = {
@@ -257,11 +264,17 @@ export default function QuizApp() {
    * StrictMode's double-invoke of updaters can't double-submit a run or double-navigate. */
   const advance = () => {
     const r = runRef.current;
+    if (r.viewing !== null) {
+      // Walking forward through reviewed questions; past the last one we're back on the live question.
+      const nextView = r.viewing + 1;
+      setRun({ ...r, viewing: nextView >= r.index ? null : nextView });
+      return;
+    }
     if (r.index + 1 >= r.quiz.length) {
       clear();
       setRun(emptyRun);
       setResult({ quiz: r.quiz, answers: r.answers, difficulty: r.difficulty, timed: r.timed, elapsed: r.elapsed });
-      finishRun(r);
+      finishRun(r).catch((e) => console.error('Could not save finished run', e));
       navigate(ROUTES.results);
       return;
     }
@@ -307,6 +320,7 @@ export default function QuizApp() {
       tagIds: saved.tagIds || [],
       difficulty: saved.difficulty || 'Mixed',
       timed: !!saved.timed,
+      viewing: null,
     });
     setSaved(null);
     navigate(ROUTES.quiz);
@@ -405,6 +419,7 @@ export default function QuizApp() {
                     pick={pick}
                     reveal={reveal}
                     advance={advance}
+                    back={back}
                   />
                 </PageTransition>
               }
@@ -421,7 +436,7 @@ export default function QuizApp() {
               path={ROUTES.progress}
               element={
                 <PageTransition>
-                  <ProgressScreen stats={stats} />
+                  <ProgressScreen />
                 </PageTransition>
               }
             />

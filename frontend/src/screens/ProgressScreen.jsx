@@ -7,6 +7,7 @@ import { ROUTES } from '../lib/routes';
 import { getAllRunsLocal } from '../lib/sync';
 import { listBookmarks, removeBookmark } from '../lib/db';
 import {
+  buildStats,
   accuracyTrend,
   coverageByTag,
   dueForReview,
@@ -86,11 +87,13 @@ function Sparkline({ data }) {
   );
 }
 
-export function ProgressScreen({ stats }) {
+export function ProgressScreen() {
   const navigate = useNavigate();
   const { tagName, index, questionLookupSync } = useData();
   const { user } = useAuth();
-  const [runs, setRuns] = useState([]);
+  // null until the first IndexedDB read resolves, so the skeleton shows instead of "No quizzes yet".
+  const [loadedRuns, setRuns] = useState(null);
+  const runs = loadedRuns || [];
   const [bookmarks, setBookmarks] = useState([]);
 
   useEffect(() => {
@@ -102,6 +105,12 @@ export function ProgressScreen({ stats }) {
     await removeBookmark(questionId);
     setBookmarks((prev) => prev.filter((b) => b.question_id !== questionId));
   };
+
+  // One read of the runs store feeds both the headline stats and the derived panels below.
+  const stats = useMemo(
+    () => (loadedRuns ? buildStats(loadedRuns, questionLookupSync, tagName) : null),
+    [loadedRuns, questionLookupSync, tagName]
+  );
 
   const trend = useMemo(() => accuracyTrend(runs, { days: 30 }), [runs]);
   const hasTrend = useMemo(() => trend.filter((d) => d.accuracy != null).length >= 2, [trend]);
