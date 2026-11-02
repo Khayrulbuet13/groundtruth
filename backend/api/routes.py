@@ -1,4 +1,5 @@
 import json
+import logging
 import secrets
 import uuid
 from datetime import datetime, timezone
@@ -33,6 +34,7 @@ from models.db import QuestionReport, QuizRun, User
 router = APIRouter(prefix="/api/v1")
 ALLOWED_PROVIDERS = {"github", "google"}
 NONCE_COOKIE = "oauth_nonce"
+log = logging.getLogger(__name__)
 
 
 class RunPayload(BaseModel):
@@ -86,7 +88,10 @@ async def dev_login(
 
 
 @router.get("/me")
-async def me(user: User | None = Depends(get_current_user)):
+async def me(response: Response, user: User | None = Depends(get_current_user)):
+    # Auth state must never be served from a browser/CDN cache, or a stale
+    # "authenticated: false" keeps the Log in button visible after signing in.
+    response.headers["Cache-Control"] = "no-store"
     if not user:
         return {"authenticated": False}
     provider = user.identities[0].provider if user.identities else None
@@ -269,6 +274,7 @@ async def auth_callback(
             return _redirect_auth_error("provider_mismatch")
         nonce = request.cookies.get(NONCE_COOKIE)
         if not nonce or payload.get("nonce") != nonce:
+            log.warning("OAuth %s callback without a matching nonce cookie", provider)
             return _redirect_auth_error("oauth_failed")
         exchanger = exchange_github if provider == "github" else exchange_google
         profile = await exchanger(code)
@@ -280,6 +286,7 @@ async def auth_callback(
         redirect.delete_cookie(NONCE_COOKIE, **cookie_kwargs())
         return redirect
     except Exception:
+        log.exception("OAuth %s callback failed", provider)
         return _redirect_auth_error("oauth_failed")
 
 

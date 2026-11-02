@@ -47,6 +47,12 @@ export default defineConfig({
         // og-image is for link-preview crawlers only — no reason to spend the install-time
         // download or the offline cache on it.
         globIgnores: ['**/data/**', '**/og-image.png'],
+        // generateSW defaults `navigateFallback` to index.html, which makes the service worker
+        // answer *every* navigation with the cached SPA shell — including the browser's
+        // redirect back to /api/v1/auth/<provider>/callback. The callback then never reaches
+        // the backend, no session cookie is set, and the header keeps showing "Log in".
+        // Server-handled paths must always go to the network.
+        navigateFallbackDenylist: [/^\/api\//, /^\/data\//],
         runtimeCaching: [
           {
             urlPattern: /\/data\/.*\.json$/,

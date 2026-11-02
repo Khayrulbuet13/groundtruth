@@ -1,40 +1,53 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { api, setUnauthorizedHandler } from './api';
 import { flushSyncQueue, pullRemoteRuns, latestSyncCursor } from './sync';
 
 const AuthContext = createContext(null);
 
+// Background sync after sign-in. Failures here (offline, IndexedDB unavailable in a
+// private window, …) must never be mistaken for "not signed in".
+async function syncAfterAuth() {
+  try {
+    const since = await latestSyncCursor();
+    await pullRemoteRuns(since);
+    await flushSyncQueue();
+  } catch {
+    /* retried on the next refresh */
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Monotonic id so a slow, older /me response can't overwrite a newer one.
+  const requestId = useRef(0);
 
   const refresh = useCallback(async () => {
+    const id = ++requestId.current;
+    let me = null;
     try {
-      setError(null);
-      const me = await api.me();
-      setUser(me?.authenticated ? me : null);
-      if (me?.authenticated) {
-        const since = await latestSyncCursor();
-        await pullRemoteRuns(since);
-        await flushSyncQueue();
-      }
+      me = await api.me();
     } catch {
       // A failed /me check means "not signed in" — treat it silently so the app
       // works offline-first with no backend configured. Only explicit user actions
       // (login / loginDev / logout) should surface errors.
-      setUser(null);
-    } finally {
-      setLoading(false);
     }
+    if (id !== requestId.current) return;
+    const authed = me?.authenticated ? me : null;
+    setUser(authed);
+    setError(null);
+    setLoading(false);
+    if (authed) syncAfterAuth();
   }, []);
 
   useEffect(() => {
-    setUnauthorizedHandler(() => setUser(null));
-    flushSyncQueue().finally(refresh);
-  }, [refresh]);
+    setUnauthorizedHandler(() => {
+      requestId.current += 1; // invalidate any in-flight /me
+      setUser(null);
+    });
+    refresh();
 
-  useEffect(() => {
     const onVis = () => {
       if (document.visibilityState === 'visible') refresh();
     };
@@ -42,26 +55,27 @@ export function AuthProvider({ children }) {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [refresh]);
 
-  const login = async (provider) => {
+  const login = useCallback(async (provider) => {
     try {
       setError(null);
       const { url } = await api.authStart(provider);
-      window.location.href = url;
+      window.location.assign(url);
     } catch (e) {
       setError(e.message || 'Could not start login');
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await api.logout();
     } catch {
       /* clear locally anyway */
     }
+    requestId.current += 1;
     setUser(null);
-  };
+  }, []);
 
-  const loginDev = async () => {
+  const loginDev = useCallback(async () => {
     try {
       setError(null);
       await api.devLogin();
@@ -69,7 +83,7 @@ export function AuthProvider({ children }) {
     } catch (e) {
       setError(e.message || 'Dev login failed');
     }
-  };
+  }, [refresh]);
 
   const value = useMemo(
     () => ({ user, loading, error, login, loginDev, logout, refresh }),

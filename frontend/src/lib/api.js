@@ -9,8 +9,9 @@ export function setUnauthorizedHandler(fn) {
 async function request(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    cache: 'no-store',
     ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
   });
   if (res.status === 401) {
     onUnauthorized();

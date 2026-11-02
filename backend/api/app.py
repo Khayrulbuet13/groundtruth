@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -13,6 +14,14 @@ async def lifespan(app: FastAPI):
     weak = settings.secret_key.startswith("change-me") or len(settings.secret_key) < 32
     if weak and not settings.dev_auth:
         raise RuntimeError("Set a long random SECRET_KEY before running in production (or enable DEV_AUTH for local)")
+    if settings.cookie_secure and settings.base_url.startswith("http://"):
+        # Browsers drop Secure cookies on plain http, so sign-in "succeeds" but the
+        # session never sticks and the UI keeps showing the Log in button.
+        logging.getLogger(__name__).warning(
+            "COOKIE_SECURE=1 but BASE_URL is http (%s): session cookies will be rejected "
+            "by the browser. Set COOKIE_SECURE=0 for local http.",
+            settings.base_url,
+        )
     await init_db()
     yield
 
